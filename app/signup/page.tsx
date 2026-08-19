@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { AuthShell, AuthField } from '@/components/auth-shell'
 
 export default function SignupPage() {
   const router = useRouter()
@@ -28,66 +29,58 @@ export default function SignupPage() {
 
   if (done) {
     return (
-      <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center px-6">
-        <div className="text-center space-y-4 max-w-sm">
-          <span className="text-5xl">🐾</span>
-          <h1 className="text-2xl font-black">Check your email</h1>
-          <p className="text-zinc-400">
-            We sent a confirmation link to <span className="text-white">{email}</span>.
-            Click it to activate your account and claim your 300 free credits.
-          </p>
-        </div>
-      </div>
+      <AuthShell
+        eyebrow="Awaiting confirmation"
+        title="Check your email"
+      >
+        <p className="text-sm leading-relaxed text-ink-2">
+          We sent a confirmation link to{' '}
+          <span className="font-mono text-ink">{email}</span>. Click it to activate
+          your account and claim your 300 free credits.
+        </p>
+        <p className="mt-5 border-t border-dashed border-line pt-4 font-mono text-xs text-ink-3">
+          No email in a few minutes? Check spam, or{' '}
+          <Link href="/login" className="text-hound hover:underline">try signing in</Link>.
+        </p>
+      </AuthShell>
     )
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center px-6">
-      <div className="w-full max-w-sm space-y-8">
-        <div className="text-center">
-          <Link href="/" className="text-3xl">🐕</Link>
-          <h1 className="text-2xl font-black mt-4">Start verifying for free</h1>
-          <p className="text-zinc-400 text-sm mt-2">
-            300 free credits · No credit card · Credits never expire
-          </p>
-        </div>
-
-        <form onSubmit={handleSignup} className="space-y-4">
-          <div className="space-y-1">
-            <label className="text-sm text-zinc-400">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-              className="w-full bg-zinc-900 border border-zinc-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-amber-500"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-sm text-zinc-400">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              minLength={8}
-              className="w-full bg-zinc-900 border border-zinc-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-amber-500"
-            />
-          </div>
-          {error && <p className="text-red-400 text-sm">{error}</p>}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-bold py-3 rounded-lg transition-colors"
-          >
-            {loading ? 'Creating account…' : 'Create Free Account'}
-          </button>
-          <p className="text-xs text-zinc-500 text-center">
-            Already have an account?{' '}
-            <Link href="/login" className="text-amber-400 hover:underline">Sign in</Link>
-          </p>
-        </form>
-      </div>
-    </div>
+    <AuthShell
+      eyebrow="Open a case"
+      title="Start verifying for free"
+      subtitle="300 free credits · no credit card · credits never expire"
+      footer={
+        <>
+          Already have an account?{' '}
+          <Link href="/login" className="font-medium text-hound hover:underline">Sign in</Link>
+        </>
+      }
+    >
+      <form onSubmit={handleSignup} className="space-y-4">
+        <AuthField
+          label="Email"
+          type="email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          required
+          autoComplete="email"
+        />
+        <AuthField
+          label="Password"
+          type="password"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          required
+          minLength={8}
+          autoComplete="new-password"
+        />
+        {error && <p className="font-mono text-sm text-invalid">{error}</p>}
+        <button type="submit" disabled={loading} className="btn-hound w-full">
+          {loading ? 'Creating account…' : 'Create free account'}
+        </button>
+      </form>
+    </AuthShell>
   )
 }

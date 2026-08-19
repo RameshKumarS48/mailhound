@@ -18,11 +18,19 @@ export function PaymentSuccessBanner() {
   if (!show) return null
 
   return (
-    <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-4 py-3 flex items-center justify-between">
-      <p className="text-emerald-400 text-sm font-medium">
-        Payment successful — credits have been added to your account.
+    <div
+      className="flex items-center justify-between rounded-lg border px-4 py-3"
+      style={{ background: 'var(--valid-bg)', borderColor: 'var(--valid)' }}
+    >
+      <p className="text-sm font-medium" style={{ color: 'var(--valid)' }}>
+        Payment received — your credits have been added.
       </p>
-      <button onClick={() => setShow(false)} className="text-emerald-600 hover:text-emerald-400 text-lg leading-none ml-4">
+      <button
+        onClick={() => setShow(false)}
+        className="ml-4 text-lg leading-none"
+        style={{ color: 'var(--valid)' }}
+        aria-label="Dismiss"
+      >
         ×
       </button>
     </div>

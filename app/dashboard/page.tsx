@@ -5,6 +5,14 @@ import { getBalance } from '@/lib/credits'
 import { VerifyForm } from '@/components/verify-form'
 import { BulkUploadForm } from '@/components/bulk-upload-form'
 import { PaymentSuccessBanner } from '@/components/payment-success-banner'
+import { Wordmark } from '@/components/site-chrome'
+
+const statusColor: Record<string, string> = {
+  completed: 'var(--valid)',
+  processing: 'var(--risky)',
+  queued: 'var(--ink-3)',
+  failed: 'var(--invalid)',
+}
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -23,90 +31,91 @@ export default async function DashboardPage() {
 
   const jobs = jobsResult.data ?? []
 
-  const statusColors = {
-    completed: 'text-emerald-400',
-    processing: 'text-amber-400',
-    queued: 'text-zinc-400',
-    failed: 'text-red-400',
-  } as const
-
   return (
-    <div className="min-h-screen bg-zinc-950 text-white">
-      <nav className="border-b border-zinc-800/60 px-6 py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-2xl">🐕</span>
-            <span className="text-xl font-bold">Mailhound</span>
-          </Link>
+    <>
+      <header className="sticky top-0 z-40 border-b border-line bg-paper/85 backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
+          <Wordmark />
           <div className="flex items-center gap-4">
-            <span className="text-sm text-zinc-400">{user.email}</span>
+            <span className="hidden font-mono text-xs text-ink-3 sm:inline">{user.email}</span>
             <form action="/api/auth/signout" method="post">
-              <button className="text-sm text-zinc-500 hover:text-white transition-colors">Sign out</button>
+              <button className="rounded-full border border-line-2 px-3 py-1.5 text-sm text-ink-2 transition-colors hover:border-ink-3 hover:text-ink">
+                Sign out
+              </button>
             </form>
           </div>
         </div>
-      </nav>
+      </header>
 
-      <div className="max-w-6xl mx-auto px-6 py-12 space-y-10">
+      <main className="mx-auto w-full max-w-6xl space-y-8 px-6 py-10">
         <PaymentSuccessBanner />
 
-        {/* Credit balance */}
-        <div className="grid sm:grid-cols-3 gap-4">
-          <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-6 sm:col-span-1">
-            <p className="text-sm text-zinc-500 mb-1">Credit Balance</p>
-            <p className="text-4xl font-black text-amber-400">{balance.toLocaleString()}</p>
-            <p className="text-xs text-zinc-500 mt-1">Never expires</p>
-            <Link href="/pricing" className="mt-4 inline-block bg-zinc-800 hover:bg-amber-500 hover:text-black text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">
-              Buy Credits
+        <div className="grid gap-4 sm:grid-cols-3">
+          {/* balance */}
+          <div className="panel flex flex-col p-6">
+            <p className="eyebrow">Credit balance</p>
+            <p className="display mt-2 text-5xl font-semibold text-hound">
+              {balance.toLocaleString()}
+            </p>
+            <p className="mt-1 font-mono text-xs text-ink-3">Never expires</p>
+            <Link href="/pricing" className="btn-hound mt-5 w-full text-sm">
+              Buy credits
             </Link>
           </div>
 
-          {/* Quick verify */}
-          <div className="sm:col-span-2 bg-zinc-900/60 border border-zinc-800 rounded-2xl p-6">
-            <p className="text-sm text-zinc-400 mb-4 font-medium">Quick Verify</p>
+          {/* quick verify */}
+          <div className="panel p-6 sm:col-span-2">
+            <p className="eyebrow mb-4">Quick verify</p>
             <VerifyForm />
           </div>
         </div>
 
-        {/* Bulk upload */}
-        <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-6">
-          <div className="mb-6">
-            <h2 className="font-bold text-lg">Bulk Verification</h2>
-            <p className="text-sm text-zinc-400">Upload a CSV with an &quot;email&quot; column. Results download as a sorted CSV file.</p>
-          </div>
+        {/* bulk */}
+        <div className="panel p-6">
+          <p className="eyebrow">Bulk verification</p>
+          <h2 className="display mt-2 text-xl font-semibold text-ink">Run a list through the hound</h2>
+          <p className="mt-1 mb-6 text-sm text-ink-2">
+            Upload a CSV with an “email” column. Results download as a sorted CSV, verdicts and all.
+          </p>
           <BulkUploadForm />
         </div>
 
-        {/* Job history */}
+        {/* history */}
         <div>
-          <h2 className="font-bold text-lg mb-4">Recent Jobs</h2>
+          <p className="eyebrow">Case log</p>
+          <h2 className="display mt-2 mb-5 text-xl font-semibold text-ink">Recent jobs</h2>
           {jobs.length === 0 ? (
-            <p className="text-zinc-500 text-sm">No jobs yet. Upload a CSV above to get started.</p>
+            <div className="panel px-5 py-10 text-center">
+              <p className="text-sm text-ink-2">No jobs yet. Upload a CSV above to open your first case.</p>
+            </div>
           ) : (
             <div className="space-y-2">
               {jobs.map((job: {
                 id: string
-                status: keyof typeof statusColors
+                status: string
                 total: number
                 valid: number
                 risky: number
                 invalid: number
                 created_at: string
               }) => (
-                <div key={job.id} className="flex items-center justify-between bg-zinc-900/40 border border-zinc-800/60 rounded-xl px-4 py-3">
+                <div key={job.id} className="panel flex flex-wrap items-center justify-between gap-3 px-5 py-3.5">
                   <div className="flex items-center gap-4">
-                    <span className={`text-sm font-medium capitalize ${statusColors[job.status]}`}>
+                    <span
+                      className="font-mono text-xs font-semibold uppercase tracking-wider"
+                      style={{ color: statusColor[job.status] ?? 'var(--ink-2)' }}
+                    >
                       {job.status}
                     </span>
-                    <span className="text-sm text-zinc-400">{job.total.toLocaleString()} emails</span>
+                    <span className="text-sm text-ink">{job.total.toLocaleString()} emails</span>
                   </div>
-                  <div className="flex items-center gap-4 text-xs text-zinc-500">
-                    <span className="text-emerald-400">{job.valid} valid</span>
-                    <span className="text-amber-400">{job.risky} risky</span>
-                    <span className="text-red-400">{job.invalid} invalid</span>
-                    <span>{new Date(job.created_at).toLocaleDateString()}</span>
+                  <div className="flex items-center gap-4 font-mono text-xs">
+                    <span style={{ color: 'var(--valid)' }}>{job.valid} valid</span>
+                    <span style={{ color: 'var(--risky)' }}>{job.risky} risky</span>
+                    <span style={{ color: 'var(--invalid)' }}>{job.invalid} invalid</span>
+                    <span className="text-ink-3">{new Date(job.created_at).toLocaleDateString()}</span>
                     {job.status === 'completed' && (
-                      <a href={`/api/bulk/${job.id}/download`} className="text-amber-400 hover:text-amber-300 transition-colors">
+                      <a href={`/api/bulk/${job.id}/download`} className="text-hound hover:underline">
                         Download
                       </a>
                     )}
@@ -116,7 +125,7 @@ export default async function DashboardPage() {
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </main>
+    </>
   )
 }

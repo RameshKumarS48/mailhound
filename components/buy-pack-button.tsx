@@ -27,9 +27,9 @@ export function BuyPackButton({ packId }: { packId: string }) {
     <button
       onClick={handleBuy}
       disabled={loading}
-      className="block w-full text-center bg-zinc-800 group-hover:bg-amber-500 group-hover:text-black text-white text-sm font-semibold py-3 rounded-lg transition-colors disabled:opacity-50"
+      className="btn-ghost w-full transition-colors group-hover:border-hound group-hover:bg-hound group-hover:text-hound-ink disabled:opacity-50"
     >
-      {loading ? 'Redirecting…' : 'Buy Pack'}
+      {loading ? 'Redirecting…' : 'Buy pack'}
     </button>
   )
 }

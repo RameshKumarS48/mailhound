@@ -1,28 +1,28 @@
 'use client'
 
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import { VerificationResult } from '@/lib/verification/types'
 
-const statusColors = {
-  valid: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  risky: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  invalid: 'bg-red-500/10 text-red-400 border-red-500/20',
+const statusMeta: Record<
+  VerificationResult['status'],
+  { label: string; verdict: string; color: string; bg: string }
+> = {
+  valid:   { label: 'Valid',   verdict: 'Deliverable',        color: 'var(--valid)',   bg: 'var(--valid-bg)' },
+  risky:   { label: 'Risky',   verdict: 'Proceed with care',  color: 'var(--risky)',   bg: 'var(--risky-bg)' },
+  invalid: { label: 'Invalid', verdict: 'Do not send',        color: 'var(--invalid)', bg: 'var(--invalid-bg)' },
 }
 
 const checkLabel: Record<string, string> = {
   syntax: 'Syntax',
   domain: 'Domain',
-  mx: 'MX Record',
-  smtp: 'SMTP',
+  mx: 'MX record',
+  smtp: 'SMTP probe',
   disposable: 'Disposable',
-  role: 'Role Address',
-  catchAll: 'Catch-All',
+  role: 'Role address',
+  catchAll: 'Catch-all',
 }
 
-export function VerifyForm() {
+export function VerifyForm({ compact = false }: { compact?: boolean }) {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<VerificationResult | null>(null)
@@ -50,62 +50,94 @@ export function VerifyForm() {
     }
   }
 
+  const meta = result ? statusMeta[result.status] : null
+  const checks = result
+    ? Object.entries(result.checks).filter(([, c]) => c.detail !== 'Skipped')
+    : []
+
   return (
-    <div className="w-full max-w-2xl mx-auto">
-      <form onSubmit={handleVerify} className="flex gap-2">
-        <Input
-          type="email"
-          placeholder="Enter any email address..."
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-500 h-12 text-base"
-          disabled={loading}
-        />
-        <Button
-          type="submit"
-          disabled={loading || !email.trim()}
-          className="h-12 px-6 bg-amber-500 hover:bg-amber-400 text-black font-semibold shrink-0"
-        >
-          {loading ? 'Checking…' : 'Verify'}
-        </Button>
+    <div className="w-full">
+      <form onSubmit={handleVerify} className="flex flex-col gap-2 sm:flex-row">
+        <div className="relative flex-1">
+          <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 font-mono text-sm text-ink-3">
+            @
+          </span>
+          <input
+            type="email"
+            placeholder="name@company.com"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            disabled={loading}
+            className="h-13 w-full rounded-full border border-line-2 bg-paper-2 py-3.5 pl-9 pr-4 font-mono text-[0.95rem] text-ink placeholder:text-ink-3 focus:border-hound focus:outline-none focus:ring-2 focus:ring-hound/25 disabled:opacity-60"
+          />
+        </div>
+        <button type="submit" disabled={loading || !email.trim()} className="btn-hound h-13 shrink-0 px-7">
+          {loading ? 'Sniffing…' : 'Run the hound'}
+        </button>
       </form>
 
       {error && (
-        <p className="mt-3 text-sm text-red-400">{error}</p>
+        <p className="mt-3 font-mono text-sm" style={{ color: 'var(--invalid)' }}>{error}</p>
       )}
 
-      {result && (
-        <div className="mt-4 rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-zinc-400">Result for</p>
-              <p className="font-mono text-white">{result.email}</p>
+      {result && meta && (
+        <div className="panel mt-4 overflow-hidden">
+          {/* masthead */}
+          <div
+            className="flex items-start justify-between gap-4 border-b border-dashed border-line px-5 py-4 sm:px-6"
+            style={{ background: meta.bg }}
+          >
+            <div className="min-w-0">
+              <p className="eyebrow">Field report</p>
+              <p className="mt-1 truncate font-mono text-sm text-ink sm:text-base">{result.email}</p>
+              <p className="mt-1 text-xs text-ink-2">
+                Confidence <span className="font-mono font-semibold" style={{ color: meta.color }}>{result.score}</span>/100
+              </p>
             </div>
-            <div className="text-right">
-              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border ${statusColors[result.status]}`}>
-                {result.status.charAt(0).toUpperCase() + result.status.slice(1)}
-              </span>
-              <p className="text-xs text-zinc-500 mt-1">Score: {result.score}/100</p>
+            <div className="stamp stamp-in shrink-0 text-center" style={{ color: meta.color }}>
+              <span className="block text-base leading-none">{meta.label}</span>
+              <span className="mt-1 block text-[0.5rem] tracking-[0.2em] opacity-80">{meta.verdict}</span>
             </div>
           </div>
 
-          <p className="text-sm text-zinc-300 bg-zinc-800/60 rounded-lg px-3 py-2">
-            <span className="text-zinc-500">Reason: </span>{result.reason}
-          </p>
-
-          <div className="grid grid-cols-2 gap-2">
-            {Object.entries(result.checks).map(([key, check]) => (
-              check.detail !== 'Skipped' && (
-                <div key={key} className="flex items-center gap-2 text-xs">
-                  <span className={check.passed ? 'text-emerald-400' : 'text-red-400'}>
-                    {check.passed ? '✓' : '✗'}
-                  </span>
-                  <span className="text-zinc-400">{checkLabel[key]}:</span>
-                  <span className="text-zinc-300 truncate">{check.detail}</span>
-                </div>
-              )
-            ))}
+          {/* verdict note */}
+          <div className="border-b border-line px-5 py-3 sm:px-6">
+            <p className="text-sm leading-relaxed text-ink-2">
+              <span className="eyebrow mr-2">Verdict</span>
+              {result.reason}
+            </p>
           </div>
+
+          {/* evidence ledger */}
+          {!compact && (
+            <div className="px-5 py-4 sm:px-6">
+              <p className="eyebrow mb-3">Evidence · {checks.length} checks</p>
+              <ul className="space-y-2">
+                {checks.map(([key, check], i) => (
+                  <li
+                    key={key}
+                    className="tick-in flex items-baseline text-sm"
+                    style={{ animationDelay: `${i * 55}ms` }}
+                  >
+                    <span className="font-mono text-ink">{checkLabel[key] ?? key}</span>
+                    <span className="leader" />
+                    <span className="max-w-[45%] truncate text-right font-mono text-xs text-ink-2">
+                      {check.detail}
+                    </span>
+                    <span
+                      className="ml-3 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[0.6rem] font-bold"
+                      style={{
+                        color: check.passed ? 'var(--valid)' : 'var(--invalid)',
+                        background: check.passed ? 'var(--valid-bg)' : 'var(--invalid-bg)',
+                      }}
+                    >
+                      {check.passed ? '✓' : '✕'}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
     </div>

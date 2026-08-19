@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { CREDIT_PACKS } from '@/lib/dodo'
 import { BuyPackButton } from '@/components/buy-pack-button'
+import { SiteNav, SiteFooter } from '@/components/site-chrome'
 
 const COMPARE = [
   { feature: 'Price per 1K emails', mailhound: '$5', zerobounce: '$8', verifox: '$9' },
@@ -9,79 +10,115 @@ const COMPARE = [
   { feature: 'Role address filter', mailhound: '✓', zerobounce: '✗', verifox: '✓' },
   { feature: 'Reason field on results', mailhound: '✓', zerobounce: '✗', verifox: '✗' },
   { feature: 'Credits expire?', mailhound: 'Never', zerobounce: 'Monthly', verifox: 'Never' },
-  { feature: 'Free tier (no CC)', mailhound: '300 credits', zerobounce: '✗', verifox: '1,000 credits' },
+  { feature: 'Free tier (no card)', mailhound: '300 credits', zerobounce: '✗', verifox: '1,000 credits' },
 ]
+
+function Cell({ value, highlight }: { value: string; highlight?: boolean }) {
+  const mark =
+    value === '✓' ? 'var(--valid)' : value === '✗' ? 'var(--invalid)' : undefined
+  return (
+    <td
+      className="px-4 py-3.5 text-center font-mono text-sm"
+      style={{ color: highlight ? 'var(--hound)' : mark ?? 'var(--ink-2)', fontWeight: highlight ? 600 : 400 }}
+    >
+      {value}
+    </td>
+  )
+}
 
 export default function PricingPage() {
   return (
-    <div className="min-h-screen bg-zinc-950 text-white px-6 py-16">
-      <div className="max-w-5xl mx-auto space-y-20">
-        <div className="text-center space-y-4">
-          <Link href="/" className="text-zinc-500 hover:text-white text-sm transition-colors">← Back</Link>
-          <h1 className="text-4xl font-black">Simple pricing. Half the price.</h1>
-          <p className="text-zinc-400 max-w-xl mx-auto">
-            No subscriptions. No expiry. Buy once, use whenever.
-            Start free — 300 credits, no credit card.
-          </p>
-        </div>
+    <>
+      <SiteNav />
 
-        {/* Credit packs */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <section className="mx-auto max-w-6xl px-6 pb-8 pt-16 sm:pt-24">
+        <p className="eyebrow">The rates</p>
+        <h1 className="display mt-4 max-w-2xl text-5xl font-semibold text-ink">
+          Simple pricing, half the price
+        </h1>
+        <p className="mt-4 max-w-xl text-lg text-ink-2">
+          No subscriptions. No expiry. Buy once, use whenever. Start free — 300
+          credits, no credit card.
+        </p>
+      </section>
+
+      {/* Packs */}
+      <section className="mx-auto max-w-6xl px-6 pb-8">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {CREDIT_PACKS.map(pack => (
-            <div key={pack.id} className="bg-zinc-900/60 border border-zinc-800 hover:border-amber-500/40 rounded-2xl p-6 space-y-4 transition-colors group">
-              <div>
-                <p className="text-3xl font-black">{pack.credits.toLocaleString()}</p>
-                <p className="text-zinc-500 text-sm">verifications</p>
+            <div key={pack.id} className="panel group flex flex-col p-6">
+              <p className="eyebrow">{pack.credits.toLocaleString()} verifications</p>
+              <p className="display mt-3 text-4xl font-semibold text-ink">
+                ${(pack.price / 100).toFixed(0)}
+              </p>
+              <p className="mt-1 font-mono text-xs text-ink-3">
+                ${(pack.price / pack.credits / 100).toFixed(4)} per email
+              </p>
+              <div className="mt-6">
+                <BuyPackButton packId={pack.id} />
               </div>
-              <div>
-                <p className="text-4xl font-black">${(pack.price / 100).toFixed(0)}</p>
-                <p className="text-xs text-zinc-500">${(pack.price / pack.credits / 100).toFixed(4)} per email</p>
-              </div>
-              <BuyPackButton packId={pack.id} />
             </div>
           ))}
         </div>
-
-        <p className="text-center text-sm text-zinc-500">
-          All packs: 7-point engine · Bulk CSV · API access · Credits never expire · No monthly minimum
+        <p className="mt-8 font-mono text-xs text-ink-3">
+          All packs — 7-point engine · bulk CSV · API access · credits never expire · no monthly minimum
         </p>
+      </section>
 
-        {/* Comparison */}
-        <div>
-          <h2 className="text-2xl font-black text-center mb-8">How we compare</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+      {/* Comparison */}
+      <section className="border-t border-line bg-paper-2/50">
+        <div className="mx-auto max-w-4xl px-6 py-20 sm:py-24">
+          <p className="eyebrow">The lineup</p>
+          <h2 className="display mt-4 text-3xl font-semibold text-ink">How we compare</h2>
+          <div className="panel mt-8 overflow-x-auto">
+            <table className="w-full">
               <thead>
-                <tr className="border-b border-zinc-800">
-                  <th className="text-left py-3 pr-6 text-zinc-400 font-normal">Feature</th>
-                  <th className="py-3 px-4 text-amber-400 font-bold">Mailhound</th>
-                  <th className="py-3 px-4 text-zinc-400 font-normal">ZeroBounce</th>
-                  <th className="py-3 px-4 text-zinc-400 font-normal">Verifox</th>
+                <tr className="border-b border-line">
+                  <th className="px-4 py-4 text-left">
+                    <span className="eyebrow">Feature</span>
+                  </th>
+                  <th className="px-4 py-4">
+                    <span className="font-mono text-sm font-semibold text-hound">Mailhound</span>
+                  </th>
+                  <th className="px-4 py-4">
+                    <span className="font-mono text-sm text-ink-3">ZeroBounce</span>
+                  </th>
+                  <th className="px-4 py-4">
+                    <span className="font-mono text-sm text-ink-3">Verifox</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {COMPARE.map(row => (
-                  <tr key={row.feature} className="border-b border-zinc-800/50">
-                    <td className="py-3 pr-6 text-zinc-300">{row.feature}</td>
-                    <td className="py-3 px-4 text-center text-amber-400 font-semibold">{row.mailhound}</td>
-                    <td className="py-3 px-4 text-center text-zinc-400">{row.zerobounce}</td>
-                    <td className="py-3 px-4 text-center text-zinc-400">{row.verifox}</td>
+                {COMPARE.map((row, i) => (
+                  <tr key={row.feature} className={i < COMPARE.length - 1 ? 'border-b border-line' : ''}>
+                    <td className="px-4 py-3.5 text-sm text-ink">{row.feature}</td>
+                    <Cell value={row.mailhound} highlight />
+                    <Cell value={row.zerobounce} />
+                    <Cell value={row.verifox} />
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         </div>
+      </section>
 
-        <div className="text-center space-y-4">
-          <Link href="/signup">
-            <span className="inline-block bg-amber-500 hover:bg-amber-400 text-black font-bold px-8 py-4 rounded-xl text-lg transition-colors cursor-pointer">
-              Start Free — 300 Credits
-            </span>
+      <section className="border-t border-line">
+        <div className="mx-auto max-w-3xl px-6 py-24 text-center">
+          <p className="eyebrow">Case closed</p>
+          <h2 className="display mx-auto mt-5 max-w-xl text-4xl font-semibold text-ink">
+            Start free. Pay only when you scale.
+          </h2>
+          <Link href="/signup" className="btn-hound mt-8 !px-8 !py-4 text-lg">
+            Start free — 300 credits
           </Link>
-          <p className="text-sm text-zinc-500">No credit card · No monthly minimum · Credits never expire</p>
+          <p className="mt-4 font-mono text-xs text-ink-3">
+            No credit card · no monthly minimum · credits never expire
+          </p>
         </div>
-      </div>
-    </div>
+      </section>
+
+      <SiteFooter />
+    </>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
+import { AuthShell, AuthField } from '@/components/auth-shell'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -20,47 +21,34 @@ export default function ForgotPasswordPage() {
   }
 
   if (done) return (
-    <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center px-6">
-      <div className="text-center space-y-4 max-w-sm">
-        <span className="text-5xl">📬</span>
-        <h1 className="text-2xl font-black">Check your email</h1>
-        <p className="text-zinc-400">If that address has an account, a reset link is on its way.</p>
-        <Link href="/login" className="block text-amber-400 hover:underline text-sm">Back to login</Link>
-      </div>
-    </div>
+    <AuthShell eyebrow="Reset requested" title="Check your email">
+      <p className="text-sm leading-relaxed text-ink-2">
+        If that address has an account, a reset link is on its way.
+      </p>
+      <Link href="/login" className="btn-ghost mt-6 w-full">Back to sign in</Link>
+    </AuthShell>
   )
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center px-6">
-      <div className="w-full max-w-sm space-y-8">
-        <div className="text-center">
-          <Link href="/" className="text-3xl">🐕</Link>
-          <h1 className="text-2xl font-black mt-4">Reset your password</h1>
-          <p className="text-zinc-400 text-sm mt-2">We&apos;ll email you a link to set a new one.</p>
-        </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1">
-            <label className="text-sm text-zinc-400">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-              className="w-full bg-zinc-900 border border-zinc-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-amber-500"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loading || !email}
-            className="w-full bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-bold py-3 rounded-lg transition-colors"
-          >
-            {loading ? 'Sending…' : 'Send Reset Link'}
-          </button>
-          <p className="text-center text-sm text-zinc-500">
-            <Link href="/login" className="text-zinc-400 hover:text-white transition-colors">Back to login</Link>
-          </p>
-        </form>
-      </div>
-    </div>
+    <AuthShell
+      eyebrow="Recover access"
+      title="Reset your password"
+      subtitle="We’ll email you a link to set a new one."
+      footer={<Link href="/login" className="font-medium text-hound hover:underline">Back to sign in</Link>}
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <AuthField
+          label="Email"
+          type="email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          required
+          autoComplete="email"
+        />
+        <button type="submit" disabled={loading || !email} className="btn-hound w-full">
+          {loading ? 'Sending…' : 'Send reset link'}
+        </button>
+      </form>
+    </AuthShell>
   )
 }

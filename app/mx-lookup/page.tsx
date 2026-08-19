@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { SiteNav, SiteFooter } from '@/components/site-chrome'
 
 interface MXRecord { exchange: string; priority: number }
 
@@ -28,57 +29,56 @@ export default function MXLookupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white px-6 py-16">
-      <div className="max-w-2xl mx-auto space-y-8">
-        <div>
-          <Link href="/" className="text-zinc-500 hover:text-white text-sm transition-colors">← Mailhound</Link>
-          <h1 className="text-3xl font-black mt-4">Free MX Record Lookup</h1>
-          <p className="text-zinc-400 mt-2">
-            Check which mail servers are configured to receive email for any domain. No account needed.
-          </p>
-        </div>
+    <>
+      <SiteNav />
 
-        <form onSubmit={lookup} className="flex gap-2">
+      <section className="mx-auto max-w-2xl px-6 py-16 sm:py-24">
+        <p className="eyebrow">Free tool · no account</p>
+        <h1 className="display mt-4 text-4xl font-semibold text-ink">MX record lookup</h1>
+        <p className="mt-3 text-ink-2">
+          See which mail servers are configured to receive email for any domain —
+          the first thing the hound checks before it knocks.
+        </p>
+
+        <form onSubmit={lookup} className="mt-8 flex flex-col gap-2 sm:flex-row">
           <input
             type="text"
             placeholder="example.com"
             value={domain}
             onChange={e => setDomain(e.target.value)}
-            className="flex-1 bg-zinc-900 border border-zinc-700 text-white placeholder:text-zinc-500 rounded-lg px-4 py-3 text-base focus:outline-none focus:border-amber-500"
+            className="h-12 flex-1 rounded-full border border-line-2 bg-paper-2 px-5 font-mono text-[0.95rem] text-ink placeholder:text-ink-3 focus:border-hound focus:outline-none focus:ring-2 focus:ring-hound/25"
           />
-          <button
-            type="submit"
-            disabled={loading || !domain.trim()}
-            className="bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-semibold px-6 py-3 rounded-lg transition-colors"
-          >
-            {loading ? 'Looking up…' : 'Lookup'}
+          <button type="submit" disabled={loading || !domain.trim()} className="btn-hound h-12 px-7">
+            {loading ? 'Looking up…' : 'Look up'}
           </button>
         </form>
 
-        {error && <p className="text-red-400 text-sm">{error}</p>}
+        {error && <p className="mt-3 font-mono text-sm text-invalid">{error}</p>}
 
         {records !== null && (
-          <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-zinc-800">
-              <p className="text-sm text-zinc-400">
-                MX records for <span className="text-white font-mono">{domain}</span>
+          <div className="panel mt-6 overflow-hidden">
+            <div className="border-b border-dashed border-line px-5 py-3">
+              <p className="eyebrow">
+                MX records · <span className="font-mono text-ink">{domain}</span>
               </p>
             </div>
             {records.length === 0 ? (
-              <p className="px-4 py-6 text-zinc-500 text-sm">No MX records found for this domain.</p>
+              <p className="px-5 py-8 text-sm text-ink-2">
+                No MX records found — this domain can’t receive email, so any address on it is invalid.
+              </p>
             ) : (
-              <table className="w-full text-sm">
-                <thead className="bg-zinc-900">
-                  <tr>
-                    <th className="text-left px-4 py-2 text-zinc-500 font-normal">Priority</th>
-                    <th className="text-left px-4 py-2 text-zinc-500 font-normal">Mail Server</th>
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-line">
+                    <th className="px-5 py-2.5 text-left"><span className="eyebrow">Priority</span></th>
+                    <th className="px-5 py-2.5 text-left"><span className="eyebrow">Mail server</span></th>
                   </tr>
                 </thead>
                 <tbody>
                   {records.map((r, i) => (
-                    <tr key={i} className="border-t border-zinc-800/50">
-                      <td className="px-4 py-3 text-amber-400 font-mono">{r.priority}</td>
-                      <td className="px-4 py-3 font-mono text-white">{r.exchange}</td>
+                    <tr key={i} className={i < records.length - 1 ? 'border-b border-line' : ''}>
+                      <td className="px-5 py-3 font-mono text-sm text-hound">{r.priority}</td>
+                      <td className="px-5 py-3 font-mono text-sm text-ink">{r.exchange}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -87,16 +87,20 @@ export default function MXLookupPage() {
           </div>
         )}
 
-        <div className="bg-zinc-900/40 border border-zinc-800/60 rounded-xl p-5 text-sm text-zinc-400 space-y-2">
-          <p className="font-semibold text-zinc-300">What are MX records?</p>
-          <p>MX (Mail Exchange) records tell the internet which servers handle email for a domain. A domain with no MX records cannot receive email — which means any address on that domain is invalid.</p>
-          <p className="pt-2">
-            <Link href="/signup" className="text-amber-400 hover:underline">
-              Verify full email addresses →
-            </Link>
+        <div className="panel mt-10 p-6">
+          <p className="eyebrow">Field note</p>
+          <p className="mt-3 text-sm leading-relaxed text-ink-2">
+            MX (Mail Exchange) records tell the internet which servers handle email
+            for a domain. A domain with no MX records can’t receive email — which
+            means every address on it is dead on arrival.
           </p>
+          <Link href="/signup" className="mt-4 inline-block font-medium text-hound hover:underline">
+            Verify full email addresses →
+          </Link>
         </div>
-      </div>
-    </div>
+      </section>
+
+      <SiteFooter />
+    </>
   )
 }

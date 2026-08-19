@@ -75,64 +75,65 @@ export function BulkUploadForm() {
         onDragOver={e => { e.preventDefault(); setDragOver(true) }}
         onDragLeave={() => setDragOver(false)}
         onDrop={e => { e.preventDefault(); setDragOver(false); handleFile(e.dataTransfer.files[0]) }}
-        className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${dragOver ? 'border-amber-500 bg-amber-500/5' : 'border-zinc-700 hover:border-zinc-500'}`}
+        className={`cursor-pointer rounded-lg border-2 border-dashed p-10 text-center transition-colors ${
+          dragOver ? 'border-hound bg-hound/5' : 'border-line-2 hover:border-ink-3'
+        }`}
       >
-        <p className="text-2xl mb-2">📂</p>
-        <p className="text-zinc-400 text-sm">Drag & drop your CSV here, or <span className="text-amber-400">browse</span></p>
-        <p className="mt-1 text-xs text-zinc-500">CSV · Email column auto-detected · Up to 100 emails per job</p>
+        <svg className="mx-auto mb-3 text-ink-3" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 15V3m0 0L8 7m4-4 4 4" />
+          <path d="M3 15v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4" />
+        </svg>
+        <p className="text-sm text-ink-2">
+          Drop your CSV here, or <span className="font-medium text-hound">browse</span>
+        </p>
+        <p className="mt-1 font-mono text-xs text-ink-3">
+          CSV · email column auto-detected · up to 100 per job
+        </p>
         <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={e => handleFile(e.target.files?.[0])} />
       </div>
-      {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
+      {error && <p className="mt-2 font-mono text-sm text-invalid">{error}</p>}
     </div>
   )
 
   if (phase === 'uploading' || phase === 'processing') return (
-    <div className="py-8 text-center space-y-3">
-      <div className="w-6 h-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto" />
-      <p className="text-zinc-400 text-sm">
-        {phase === 'uploading' ? 'Uploading…' : `Verifying ${job?.total.toLocaleString() ?? '…'} emails`}
+    <div className="space-y-3 py-10 text-center">
+      <div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-hound border-t-transparent" />
+      <p className="text-sm text-ink-2">
+        {phase === 'uploading' ? 'Uploading…' : `Working the case — ${job?.total.toLocaleString() ?? '…'} addresses`}
       </p>
-      <p className="text-xs text-zinc-600">This usually takes under a minute</p>
+      <p className="font-mono text-xs text-ink-3">This usually takes under a minute</p>
     </div>
   )
 
   if (phase === 'completed' && job) return (
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-3 text-center">
-        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4">
-          <p className="text-2xl font-black text-emerald-400">{job.valid.toLocaleString()}</p>
-          <p className="text-xs text-zinc-400 mt-1">Valid</p>
-        </div>
-        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
-          <p className="text-2xl font-black text-amber-400">{job.risky.toLocaleString()}</p>
-          <p className="text-xs text-zinc-400 mt-1">Risky</p>
-        </div>
-        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
-          <p className="text-2xl font-black text-red-400">{job.invalid.toLocaleString()}</p>
-          <p className="text-xs text-zinc-400 mt-1">Invalid</p>
-        </div>
+        <Tally n={job.valid} label="Valid" color="var(--valid)" bg="var(--valid-bg)" />
+        <Tally n={job.risky} label="Risky" color="var(--risky)" bg="var(--risky-bg)" />
+        <Tally n={job.invalid} label="Invalid" color="var(--invalid)" bg="var(--invalid-bg)" />
       </div>
       <div className="flex gap-2">
-        <a
-          href={`/api/bulk/${job.jobId}/download`}
-          className="flex-1 text-center bg-amber-500 hover:bg-amber-400 text-black font-bold py-2.5 rounded-lg text-sm transition-colors"
-        >
-          Download Results CSV
+        <a href={`/api/bulk/${job.jobId}/download`} className="btn-hound flex-1 text-sm">
+          Download results CSV
         </a>
-        <button
-          onClick={reset}
-          className="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white text-sm rounded-lg transition-colors"
-        >
-          New Upload
-        </button>
+        <button onClick={reset} className="btn-ghost text-sm">New upload</button>
       </div>
     </div>
   )
 
   return (
-    <div className="py-6 text-center space-y-2">
-      <p className="text-red-400 text-sm">Job failed. Please try again.</p>
-      <button onClick={reset} className="text-xs text-zinc-500 hover:text-white transition-colors">Try again</button>
+    <div className="space-y-2 py-6 text-center">
+      <p className="font-mono text-sm text-invalid">Job failed. Please try again.</p>
+      <button onClick={reset} className="font-mono text-xs text-ink-3 hover:text-ink">Try again</button>
+    </div>
+  )
+}
+
+function Tally({ n, label, color, bg }: { n: number; label: string; color: string; bg: string }) {
+  return (
+    <div className="rounded-lg border p-4" style={{ background: bg, borderColor: color }}>
+      <p className="display text-3xl font-semibold" style={{ color }}>{n.toLocaleString()}</p>
+      <p className="eyebrow mt-1">{label}</p>
     </div>
   )
 }
