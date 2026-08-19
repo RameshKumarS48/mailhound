@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { after } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { debitCredit, getBalance } from '@/lib/credits'
 import { verifyEmail } from '@/lib/verification'
@@ -48,7 +49,7 @@ export async function POST(req: NextRequest) {
 
   const { data: job, error: jobError } = await supabase
     .from('verification_jobs')
-    .insert({ user_id: user.id, status: 'queued', total: emails.length })
+    .insert({ user_id: user.id, status: 'processing', total: emails.length })
     .select()
     .single()
 
@@ -56,45 +57,52 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to create job' }, { status: 500 })
   }
 
-  // Debit upfront
   await debitCredit(user.id, emails.length)
 
-  // Process small lists inline; large lists are queued (Phase 2: BullMQ worker)
-  if (emails.length <= 100) {
-    processJobInline(job.id, emails, user.id).catch(console.error)
-  } else {
-    // TODO Phase 2: enqueue to BullMQ / Upstash Queue
-    await supabase
-      .from('verification_jobs')
-      .update({ status: 'queued' })
-      .eq('id', job.id)
-  }
+  // after() runs after the response is sent — Vercel Fluid Compute keeps the
+  // function alive until this completes, no matter how long the list is.
+  after(async () => {
+    await processJob(job.id, emails, user.id)
+  })
 
   return NextResponse.json({ jobId: job.id, total: emails.length, status: 'processing' })
 }
 
-async function processJobInline(jobId: string, emails: string[], userId: string) {
+async function processJob(jobId: string, emails: string[], userId: string) {
   const { createClient } = await import('@/lib/supabase/server')
   const supabase = await createClient()
 
-  await supabase.from('verification_jobs').update({ status: 'processing' }).eq('id', jobId)
-
   let valid = 0, risky = 0, invalid = 0
-  for (const email of emails) {
-    const result = await verifyEmail(email)
-    if (result.status === 'valid') valid++
-    else if (result.status === 'risky') risky++
-    else invalid++
 
-    await supabase.from('verification_results').insert({
-      job_id: jobId,
-      user_id: userId,
-      email: result.email,
-      status: result.status,
-      reason: result.reason,
-      score: result.score,
-      raw_checks: result.checks,
-    })
+  // Process in chunks of 20 so we don't overwhelm the SMTP worker
+  const CHUNK = 20
+  for (let i = 0; i < emails.length; i += CHUNK) {
+    const chunk = emails.slice(i, i + CHUNK)
+    const results = await Promise.all(chunk.map(e => verifyEmail(e)))
+
+    for (const result of results) {
+      if (result.status === 'valid') valid++
+      else if (result.status === 'risky') risky++
+      else invalid++
+    }
+
+    await supabase.from('verification_results').insert(
+      results.map(r => ({
+        job_id:  jobId,
+        user_id: userId,
+        email:   r.email,
+        status:  r.status,
+        reason:  r.reason,
+        score:   r.score,
+        raw_checks: r.checks,
+      }))
+    )
+
+    // Update running counts so the dashboard stays live
+    await supabase
+      .from('verification_jobs')
+      .update({ valid, risky, invalid })
+      .eq('id', jobId)
   }
 
   await supabase

@@ -3,7 +3,6 @@ import { checkDomain, checkMX } from './dns'
 import { checkSMTP } from './smtp'
 import { checkDisposable } from './disposable'
 import { checkRole } from './role'
-import { checkCatchAll } from './catch-all'
 import { VerificationResult, VerificationStatus, CheckResult } from './types'
 
 const SKIPPED: CheckResult = { passed: false, detail: 'Skipped' }
@@ -11,9 +10,10 @@ const SKIPPED: CheckResult = { passed: false, detail: 'Skipped' }
 export async function verifyEmail(email: string): Promise<VerificationResult> {
   const normalized = email.trim().toLowerCase()
   const atIndex = normalized.lastIndexOf('@')
-  const local = normalized.slice(0, atIndex)
+  const local  = normalized.slice(0, atIndex)
   const domain = normalized.slice(atIndex + 1)
 
+  // 1 — Syntax (no network)
   const syntax = checkSyntax(normalized)
   if (!syntax.passed) {
     return build(normalized, 'invalid', syntax.detail, 0, {
@@ -22,6 +22,7 @@ export async function verifyEmail(email: string): Promise<VerificationResult> {
     })
   }
 
+  // 2 — Domain, disposable, role (parallel DNS)
   const [domainCheck, disposable, role] = await Promise.all([
     checkDomain(domain),
     Promise.resolve(checkDisposable(domain)),
@@ -42,30 +43,32 @@ export async function verifyEmail(email: string): Promise<VerificationResult> {
     })
   }
 
-  const [mx, catchAll] = await Promise.all([checkMX(domain), checkCatchAll(domain)])
-
+  // 3 — MX record
+  const mx = await checkMX(domain)
   if (!mx.passed) {
     return build(normalized, 'invalid', mx.detail, 10, {
-      syntax, domain: domainCheck, mx, smtp: SKIPPED, disposable, role, catchAll,
+      syntax, domain: domainCheck, mx, smtp: SKIPPED, disposable, role, catchAll: SKIPPED,
     })
   }
 
-  const smtp = await checkSMTP(normalized)
+  // 4 — SMTP + catch-all via worker (single call, skips major providers automatically)
+  const { smtp, catchAll } = await checkSMTP(normalized, mx.detail)
 
   let score = 100
-  if (!smtp.passed) score -= 55
-  if (!role.passed) score -= 25
+  if (!smtp.passed)     score -= 55
   if (!catchAll.passed) score -= 15
+  if (!role.passed)     score -= 25
 
   const status: VerificationStatus =
-    !smtp.passed ? 'invalid' :
-    (!role.passed || !catchAll.passed) ? 'risky' :
+    !smtp.passed     ? 'invalid' :
+    !catchAll.passed ? 'risky'   :
+    !role.passed     ? 'risky'   :
     'valid'
 
   const reason =
-    !smtp.passed ? smtp.detail :
-    !role.passed ? role.detail :
+    !smtp.passed     ? smtp.detail     :
     !catchAll.passed ? catchAll.detail :
+    !role.passed     ? role.detail     :
     'Deliverable address'
 
   return build(normalized, status, reason, Math.max(0, Math.min(100, score)), {

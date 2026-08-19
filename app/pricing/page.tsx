@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { CREDIT_PACKS } from '@/lib/stripe'
+import { CREDIT_PACKS } from '@/lib/dodo'
+import { BuyPackButton } from '@/components/buy-pack-button'
 
 const COMPARE = [
   { feature: 'Price per 1K emails', mailhound: '$5', zerobounce: '$8', verifox: '$9' },
@@ -36,11 +37,7 @@ export default function PricingPage() {
                 <p className="text-4xl font-black">${(pack.price / 100).toFixed(0)}</p>
                 <p className="text-xs text-zinc-500">${(pack.price / pack.credits / 100).toFixed(4)} per email</p>
               </div>
-              <Link href="/signup">
-                <span className="block text-center bg-zinc-800 group-hover:bg-amber-500 group-hover:text-black text-white text-sm font-semibold py-3 rounded-lg transition-colors cursor-pointer">
-                  Buy Pack
-                </span>
-              </Link>
+              <BuyPackButton packId={pack.id} />
             </div>
           ))}
         </div>

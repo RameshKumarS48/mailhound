@@ -2,6 +2,9 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { getBalance } from '@/lib/credits'
+import { VerifyForm } from '@/components/verify-form'
+import { BulkUploadForm } from '@/components/bulk-upload-form'
+import { PaymentSuccessBanner } from '@/components/payment-success-banner'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -45,6 +48,8 @@ export default async function DashboardPage() {
       </nav>
 
       <div className="max-w-6xl mx-auto px-6 py-12 space-y-10">
+        <PaymentSuccessBanner />
+
         {/* Credit balance */}
         <div className="grid sm:grid-cols-3 gap-4">
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-6 sm:col-span-1">
@@ -59,17 +64,15 @@ export default async function DashboardPage() {
           {/* Quick verify */}
           <div className="sm:col-span-2 bg-zinc-900/60 border border-zinc-800 rounded-2xl p-6">
             <p className="text-sm text-zinc-400 mb-4 font-medium">Quick Verify</p>
-            <QuickVerifyForm />
+            <VerifyForm />
           </div>
         </div>
 
         {/* Bulk upload */}
         <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="font-bold text-lg">Bulk Verification</h2>
-              <p className="text-sm text-zinc-400">Upload a CSV with an &quot;email&quot; column. Results download as a clean sorted file.</p>
-            </div>
+          <div className="mb-6">
+            <h2 className="font-bold text-lg">Bulk Verification</h2>
+            <p className="text-sm text-zinc-400">Upload a CSV with an &quot;email&quot; column. Results download as a sorted CSV file.</p>
           </div>
           <BulkUploadForm />
         </div>
@@ -102,6 +105,11 @@ export default async function DashboardPage() {
                     <span className="text-amber-400">{job.risky} risky</span>
                     <span className="text-red-400">{job.invalid} invalid</span>
                     <span>{new Date(job.created_at).toLocaleDateString()}</span>
+                    {job.status === 'completed' && (
+                      <a href={`/api/bulk/${job.id}/download`} className="text-amber-400 hover:text-amber-300 transition-colors">
+                        Download
+                      </a>
+                    )}
                   </div>
                 </div>
               ))}
@@ -109,27 +117,6 @@ export default async function DashboardPage() {
           )}
         </div>
       </div>
-    </div>
-  )
-}
-
-// Client components inlined for simplicity
-function QuickVerifyForm() {
-  return (
-    <div id="quick-verify-placeholder" className="text-zinc-500 text-sm">
-      {/* Replaced by VerifyForm client component — connect in follow-up */}
-      <p>Single email verification form loads here. See <code className="text-zinc-400">components/verify-form.tsx</code>.</p>
-    </div>
-  )
-}
-
-function BulkUploadForm() {
-  return (
-    <div className="border-2 border-dashed border-zinc-700 rounded-xl p-8 text-center text-zinc-500 text-sm">
-      <p className="text-2xl mb-2">📂</p>
-      <p>Drag & drop your CSV here, or <span className="text-amber-400 cursor-pointer">browse</span></p>
-      <p className="mt-1 text-xs">CSV or Excel · Any size · Email column auto-detected</p>
-      {/* Full drag-and-drop upload wired in follow-up */}
     </div>
   )
 }

@@ -3,6 +3,23 @@ import { verifyEmail } from '@/lib/verification'
 import { createClient } from '@/lib/supabase/server'
 import { debitCredit } from '@/lib/credits'
 
+// Simple in-memory rate limiter: 10 requests per IP per minute for anonymous users
+const anonBucket = new Map<string, { count: number; resetAt: number }>()
+const ANON_LIMIT = 10
+const WINDOW_MS  = 60_000
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now()
+  const entry = anonBucket.get(ip)
+  if (!entry || now > entry.resetAt) {
+    anonBucket.set(ip, { count: 1, resetAt: now + WINDOW_MS })
+    return false
+  }
+  if (entry.count >= ANON_LIMIT) return true
+  entry.count++
+  return false
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null)
   const email = body?.email
@@ -18,8 +35,15 @@ export async function POST(req: NextRequest) {
     if (!ok) {
       return NextResponse.json({ error: 'Insufficient credits. Top up at /pricing.' }, { status: 402 })
     }
+  } else {
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
+    if (isRateLimited(ip)) {
+      return NextResponse.json(
+        { error: 'Rate limit reached. Sign up for 300 free credits.' },
+        { status: 429 }
+      )
+    }
   }
-  // Unauthenticated: free tool — rate limiting handled by Vercel Edge config
 
   const result = await verifyEmail(email)
   return NextResponse.json(result)

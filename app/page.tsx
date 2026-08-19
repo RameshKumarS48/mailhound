@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { VerifyForm } from '@/components/verify-form'
-import { CREDIT_PACKS } from '@/lib/stripe'
+import { CREDIT_PACKS } from '@/lib/dodo'
 
 const CHECKS = [
   { name: 'Syntax Validation', who: 'All tools', desc: 'Every typo, missing @, and broken format caught before any network call.' },

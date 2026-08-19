@@ -1,26 +1,80 @@
 import { CheckResult } from './types'
 
-// Phase 1: Debounce API handles SMTP verification.
-// Phase 2: Replace with self-hosted worker on Hetzner VPS.
-export async function checkSMTP(email: string): Promise<CheckResult> {
-  const apiKey = process.env.DEBOUNCE_API_KEY
-  if (!apiKey) {
-    return { passed: true, detail: 'SMTP check skipped (configure DEBOUNCE_API_KEY)' }
-  }
-  try {
-    const res = await fetch(
-      `https://api.debounce.io/v1/?api=${apiKey}&email=${encodeURIComponent(email)}`,
-      { signal: AbortSignal.timeout(6000) }
-    )
-    const data = await res.json()
-    const result = data?.debounce
-    if (!result) return { passed: true, detail: 'SMTP inconclusive' }
-    if (result.result === 'Safe to Send') return { passed: true, detail: 'Mailbox confirmed' }
-    if (result.result === 'Invalid') {
-      return { passed: false, detail: result.reason ?? 'Mailbox does not exist' }
+export interface SMTPCheckResult {
+  smtp: CheckResult
+  catchAll: CheckResult
+}
+
+// These providers never reveal whether an address exists via SMTP.
+// Probing them always returns 250, so skip the check entirely.
+const MAJOR_MX_PATTERNS = [
+  'google', 'gmail',
+  'outlook', 'hotmail', 'microsoft', 'live.com',
+  'yahoo', 'ymail',
+  'icloud', 'apple',
+  'protonmail', 'proton.me',
+  'zoho',
+]
+
+function isMajorProvider(mxHost: string): boolean {
+  const lower = mxHost.toLowerCase()
+  return MAJOR_MX_PATTERNS.some(p => lower.includes(p))
+}
+
+export async function checkSMTP(email: string, mxHost: string): Promise<SMTPCheckResult> {
+  // Major providers validate recipients internally — SMTP probes are useless
+  if (isMajorProvider(mxHost)) {
+    return {
+      smtp:     { passed: true, detail: 'Major provider — mailbox existence not verifiable via SMTP' },
+      catchAll: { passed: true, detail: 'Major provider — validates recipients internally' },
     }
-    return { passed: true, detail: result.result ?? 'SMTP inconclusive' }
+  }
+
+  const workerUrl = process.env.SMTP_WORKER_URL
+  const workerKey = process.env.SMTP_WORKER_KEY
+
+  if (!workerUrl) {
+    return {
+      smtp:     { passed: true, detail: 'SMTP check skipped — configure SMTP_WORKER_URL' },
+      catchAll: { passed: true, detail: 'Catch-all check skipped' },
+    }
+  }
+
+  try {
+    const url = new URL('/verify', workerUrl)
+    url.searchParams.set('email', email)
+    const res = await fetch(url.toString(), {
+      headers: workerKey ? { 'x-api-key': workerKey } : {},
+      signal: AbortSignal.timeout(20_000),
+    })
+
+    if (!res.ok) {
+      return {
+        smtp:     { passed: true, detail: 'SMTP worker error — treated as inconclusive' },
+        catchAll: { passed: true, detail: 'Catch-all check unavailable' },
+      }
+    }
+
+    const data = await res.json() as {
+      exists: 'yes' | 'no' | 'unknown'
+      catchAll: boolean
+      detail: string
+    }
+
+    const smtp: CheckResult =
+      data.exists === 'yes' ? { passed: true,  detail: data.detail } :
+      data.exists === 'no'  ? { passed: false, detail: data.detail } :
+                              { passed: true,  detail: data.detail || 'SMTP inconclusive' }
+
+    const catchAll: CheckResult = data.catchAll
+      ? { passed: false, detail: 'Catch-all domain — all addresses accepted, deliverability unverifiable' }
+      : { passed: true,  detail: 'Not a catch-all domain' }
+
+    return { smtp, catchAll }
   } catch {
-    return { passed: true, detail: 'SMTP timeout — treated as inconclusive' }
+    return {
+      smtp:     { passed: true, detail: 'SMTP worker timeout — treated as inconclusive' },
+      catchAll: { passed: true, detail: 'Catch-all check unavailable' },
+    }
   }
 }
