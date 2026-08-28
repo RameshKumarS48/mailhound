@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyEmail } from '@/lib/verification'
 import { createClient } from '@/lib/supabase/server'
-import { debitCredit } from '@/lib/credits'
+import { debitCreditAdmin } from '@/lib/credits'
 
 // Simple in-memory rate limiter: 10 requests per IP per minute for anonymous users
 const anonBucket = new Map<string, { count: number; resetAt: number }>()
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (user) {
-    const ok = await debitCredit(user.id, 1)
+    const ok = await debitCreditAdmin(user.id, 1)
     if (!ok) {
       return NextResponse.json({ error: 'Insufficient credits. Top up at /pricing.' }, { status: 402 })
     }
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
     if (isRateLimited(ip)) {
       return NextResponse.json(
-        { error: 'Rate limit reached. Sign up for 300 free credits.' },
+        { error: 'Rate limit reached. Sign up for 300 free verifications.' },
         { status: 429 }
       )
     }
