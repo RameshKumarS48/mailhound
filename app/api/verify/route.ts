@@ -31,9 +31,12 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (user) {
-    const ok = await debitCreditAdmin(user.id, 1)
-    if (!ok) {
+    const debit = await debitCreditAdmin(user.id, 1)
+    if (debit === 'insufficient') {
       return NextResponse.json({ error: 'Insufficient credits. Top up at /pricing.' }, { status: 402 })
+    }
+    if (debit === 'error') {
+      return NextResponse.json({ error: 'Credit system error. Please try again.' }, { status: 500 })
     }
   } else {
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
