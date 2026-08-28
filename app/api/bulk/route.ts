@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { after } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { debitCredit, getBalance } from '@/lib/credits'
+import { debitCreditAdmin, getBalance } from '@/lib/credits'
 import { verifyEmail } from '@/lib/verification'
 import Papa from 'papaparse'
 
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to create job' }, { status: 500 })
   }
 
-  await debitCredit(user.id, emails.length)
+  await debitCreditAdmin(user.id, emails.length)
 
   // after() runs after the response is sent — Vercel Fluid Compute keeps the
   // function alive until this completes, no matter how long the list is.

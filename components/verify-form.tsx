@@ -1,7 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { VerificationResult } from '@/lib/verification/types'
+import { analytics } from '@/lib/analytics'
 
 const statusMeta: Record<
   VerificationResult['status'],
@@ -23,6 +25,7 @@ const checkLabel: Record<string, string> = {
 }
 
 export function VerifyForm({ compact = false }: { compact?: boolean }) {
+  const router = useRouter()
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<VerificationResult | null>(null)
@@ -43,6 +46,8 @@ export function VerifyForm({ compact = false }: { compact?: boolean }) {
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Verification failed'); return }
       setResult(data)
+      analytics.track('email_verified', { status: data.status, score: data.score })
+      router.refresh()
     } catch {
       setError('Network error — please try again')
     } finally {
