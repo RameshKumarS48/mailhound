@@ -92,6 +92,28 @@ export function BulkUploadForm() {
         <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={e => handleFile(e.target.files?.[0])} />
       </div>
       {error && <p className="mt-2 font-mono text-sm text-invalid">{error}</p>}
+
+      <div className="mt-4 rounded-lg border border-line bg-paper-2 px-4 py-3">
+        <p className="eyebrow mb-2">Expected format</p>
+        <div className="overflow-x-auto">
+          <table className="w-full font-mono text-xs">
+            <thead>
+              <tr className="border-b border-line">
+                <th className="pb-1.5 pr-6 text-left font-semibold text-ink">email</th>
+                <th className="pb-1.5 pr-6 text-left text-ink-3 font-normal">name <span className="opacity-60">(optional)</span></th>
+                <th className="pb-1.5 text-left text-ink-3 font-normal">other columns <span className="opacity-60">(kept in output)</span></th>
+              </tr>
+            </thead>
+            <tbody className="text-ink-2">
+              <tr><td className="py-0.5 pr-6">alice@example.com</td><td className="pr-6">Alice</td><td>…</td></tr>
+              <tr><td className="py-0.5 pr-6">bob@company.io</td><td className="pr-6">Bob</td><td>…</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-2.5 text-xs text-ink-3">
+          Column named <span className="font-mono font-medium text-ink-2">email</span> is required (case-insensitive). Accepts <span className="font-mono text-ink-2">.csv</span>, <span className="font-mono text-ink-2">.xlsx</span>, or <span className="font-mono text-ink-2">.xls</span> · up to 100,000 rows.
+        </p>
+      </div>
     </div>
   )
 
