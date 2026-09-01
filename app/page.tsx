@@ -1,6 +1,13 @@
 import Link from 'next/link'
 import { VerifyForm } from '@/components/verify-form'
 import { SiteNav, SiteFooter } from '@/components/site-chrome'
+import { Section, SectionHeading } from '@/components/site/section'
+import { Reveal } from '@/components/site/reveal'
+import { CountUp } from '@/components/site/count-up'
+import { HeroSpecimen } from '@/components/site/hero-specimen'
+import { ProofStrip, TrustBand } from '@/components/site/trust-band'
+import { Faq } from '@/components/site/faq'
+import { CtaBand } from '@/components/site/cta-band'
 import { CREDIT_PACKS } from '@/lib/dodo'
 
 // The engine runs as an ordered pipeline with early-exit, so the numbering
@@ -39,11 +46,13 @@ const EXHIBITS = [
   },
 ]
 
-const CASE_STATS = [
-  { value: '99.9%', label: 'Accuracy' },
-  { value: '~2s', label: 'Per verdict' },
-  { value: '$0.005', label: 'Per email · 1K pack' },
-  { value: 'Never', label: 'Credits expire' },
+const FAQ = [
+  { q: 'What counts as one credit?', a: 'One email verification is one credit. Domain Health is 5, a blacklist check is 3, and Email Finder is 10 — but Finder only charges on a verified hit. Nothing is charged for a result we can’t stand behind.' },
+  { q: 'Do credits expire?', a: 'No. Buy a pack once and the credits sit in your balance until you use them — no monthly reset, no subscription, no “use it or lose it”.' },
+  { q: 'How is this half the price of ZeroBounce?', a: 'We run our own verification infrastructure instead of reselling, and we don’t bundle features you didn’t ask for. A 1,000-email pack is $5 — $0.005 per address — and it gets cheaper per email as packs get larger.' },
+  { q: 'What’s the difference between “risky” and “invalid”?', a: 'Invalid means the mailbox was rejected — do not send. Risky means it’s technically reachable but carries a flag (a role inbox, a catch-all domain, or a low-confidence signal) so you can decide with the reason in hand.' },
+  { q: 'Is there an API?', a: <>Yes — one Bearer-authenticated endpoint runs the full seven-point engine on every request, sharing the same credit balance as the dashboard. See the <Link href="/docs" className="text-hound underline underline-offset-2">API docs</Link>.</> },
+  { q: 'Do you store the lists I upload?', a: 'We verify your addresses and return the results. We don’t sell, seed, or reuse your list. Payment and card handling are fully off-loaded to our processor.' },
 ]
 
 export default function Home() {
@@ -52,18 +61,18 @@ export default function Home() {
       <SiteNav />
 
       {/* Hero — the intake desk. The product's one trick is front and center. */}
-      <section className="mx-auto max-w-6xl px-6 pb-16 pt-16 sm:pt-24">
-        <div className="grid items-start gap-14 lg:grid-cols-[1.05fr_0.95fr]">
+      <section className="mx-auto max-w-6xl px-6 pb-16 pt-14 sm:pt-20">
+        <div className="grid items-start gap-8 lg:gap-14 lg:grid-cols-[1.05fr_0.95fr]">
           <div>
             <p className="eyebrow">Case file · email deliverability</p>
-            <h1 className="display mt-5 text-[2.9rem] font-semibold text-ink sm:text-[3.8rem]">
+            <h1 className="display mt-5 font-semibold text-ink text-fluid-5xl">
               Every dead inbox,{' '}
               <em className="not-italic text-hound" style={{ fontStyle: 'italic' }}>
                 sniffed out
               </em>{' '}
               before you hit send.
             </h1>
-            <p className="mt-6 max-w-lg text-lg leading-relaxed text-ink-2">
+            <p className="mt-6 max-w-lg text-ink-2 text-fluid-lg leading-relaxed">
               A seven-point engine that returns a real verdict — deliverable, risky,
               or dead — never a shrug. Half the price of ZeroBounce, and your credits
               never expire.
@@ -71,27 +80,29 @@ export default function Home() {
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link href="/signup" className="btn-hound">
-                Start free — 300 credits
+                Start free — 300 verifications
               </Link>
               <Link href="/pricing" className="btn-ghost">
                 See the rates
               </Link>
             </div>
 
+            <div className="mt-6">
+              <ProofStrip items={['No credit card', 'Credits never expire', 'Never returns “unknown”']} />
+            </div>
+
             {/* case-stats ledger — not a row of big glowing numbers */}
             <dl className="mt-10 grid max-w-lg grid-cols-2 gap-y-4 border-t border-line pt-6 sm:grid-cols-4">
-              {CASE_STATS.map((s, i) => (
-                <div key={s.label} className={i < CASE_STATS.length - 1 ? 'sm:border-r sm:border-line' : ''}>
-                  <dt className="font-mono text-lg font-semibold text-ink">{s.value}</dt>
-                  <dd className="eyebrow mt-1">{s.label}</dd>
-                </div>
-              ))}
+              <Stat value={<CountUp value={7} />} label="Checks · every address" borderR />
+              <Stat value="~2s" label="Per verdict" borderR />
+              <Stat value="$0.005" label="Per email · 1K pack" borderR />
+              <Stat value="Never" label="Credits expire" />
             </dl>
           </div>
 
           {/* intake + specimen report */}
           <div className="space-y-4">
-            <div className="panel p-1.5 shadow-[0_1px_0_var(--line-2)]">
+            <div className="panel p-1.5" style={{ boxShadow: 'var(--shadow-panel)' }}>
               <div className="rounded-[calc(var(--radius-lg)-0.35rem)] border border-line bg-paper px-5 py-6 sm:px-7 sm:py-8">
                 <div className="mb-5 flex items-center justify-between">
                   <p className="eyebrow">Submit a suspect address</p>
@@ -99,32 +110,27 @@ export default function Home() {
                 </div>
                 <VerifyForm />
                 <p className="mt-5 border-t border-dashed border-line pt-4 font-mono text-xs leading-relaxed text-ink-3">
-                  Single checks are on the house. Sign up for 300 free credits and bulk CSV — no card, no expiry.
+                  Single checks are on the house. Sign up for 300 free verifications and bulk CSV — no card, no expiry.
                 </p>
               </div>
             </div>
 
-            <SpecimenReport />
+            <HeroSpecimen />
           </div>
         </div>
       </section>
 
       {/* The charges */}
-      <section className="border-t border-line bg-paper-2/50">
-        <div className="mx-auto max-w-6xl px-6 py-20 sm:py-28">
-          <div className="max-w-2xl">
-            <p className="eyebrow">The charges</p>
-            <h2 className="display mt-4 text-4xl font-semibold text-ink">
-              Three ways bad email is costing you right now
-            </h2>
-            <p className="mt-4 text-ink-2">
-              Every unverified send nudges your sender score toward throttling. Once
-              Gmail starts filtering you, even your good addresses stop landing.
-            </p>
-          </div>
-          <div className="mt-14 grid gap-5 sm:grid-cols-3">
-            {EXHIBITS.map(x => (
-              <article key={x.tag} className="panel flex flex-col p-6">
+      <Section tint>
+        <SectionHeading
+          eyebrow="The charges"
+          title="Three ways bad email is costing you right now"
+          lede="Every unverified send nudges your sender score toward throttling. Once Gmail starts filtering you, even your good addresses stop landing."
+        />
+        <div className="mt-14 grid gap-5 sm:grid-cols-3">
+          {EXHIBITS.map((x, i) => (
+            <Reveal key={x.tag} delay={i * 80} className="h-full">
+              <article className="panel flex h-full flex-col p-6 transition-shadow hover:shadow-[var(--shadow-panel)]">
                 <div className="flex items-center justify-between">
                   <span className="eyebrow text-hound">{x.tag}</span>
                   <span className="font-mono text-xs uppercase tracking-wider text-ink-3">{x.charge}</span>
@@ -135,87 +141,83 @@ export default function Home() {
                   {x.finding}
                 </p>
               </article>
-            ))}
-          </div>
+            </Reveal>
+          ))}
         </div>
-      </section>
+      </Section>
 
       {/* Chain of custody — the 7-check pipeline */}
-      <section className="border-t border-line">
-        <div className="mx-auto max-w-6xl px-6 py-20 sm:py-28">
-          <div className="max-w-2xl">
-            <p className="eyebrow">Chain of custody</p>
-            <h2 className="display mt-4 text-4xl font-semibold text-ink">
-              Seven checks, run in order, every one explained
-            </h2>
-            <p className="mt-4 text-ink-2">
-              Most tools stop at four or five. Each address is walked through all
-              seven — and the moment one fails, you get the exact reason why.
-            </p>
-          </div>
-
-          <ol className="mt-14 space-y-0">
-            {CHECKS.map((c, i) => {
-              const exclusive = c.who === 'Mailhound'
-              return (
-                <li
-                  key={c.name}
-                  className="group grid grid-cols-[2.5rem_1fr] gap-x-4 sm:grid-cols-[3.5rem_1fr]"
-                >
-                  {/* spine */}
-                  <div className="flex flex-col items-center">
+      <Section>
+        <SectionHeading
+          eyebrow="Chain of custody"
+          title="Seven checks, run in order, every one explained"
+          lede="Most tools stop at four or five. Each address is walked through all seven — and the moment one fails, you get the exact reason why."
+        />
+        <ol className="mt-14 space-y-0">
+          {CHECKS.map((c, i) => {
+            const exclusive = c.who === 'Mailhound'
+            return (
+              <li key={c.name} className="group grid grid-cols-[2.5rem_1fr] gap-x-4 sm:grid-cols-[3.5rem_1fr]">
+                {/* spine */}
+                <div className="flex flex-col items-center">
+                  <span
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border font-mono text-xs font-semibold transition-transform group-hover:scale-110"
+                    style={
+                      exclusive
+                        ? { background: 'var(--hound)', color: 'var(--hound-ink)', borderColor: 'var(--hound)' }
+                        : { borderColor: 'var(--line-2)', color: 'var(--ink-2)' }
+                    }
+                  >
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  {i < CHECKS.length - 1 && <span className="w-px flex-1 bg-line" />}
+                </div>
+                {/* content */}
+                <div className={`min-w-0 pb-8 ${i === 0 ? '' : 'pt-1'}`}>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-base font-semibold text-ink">{c.name}</h3>
                     <span
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border font-mono text-xs font-semibold"
+                      className="rounded-full px-2 py-0.5 font-mono text-[0.65rem] uppercase tracking-wider"
                       style={
                         exclusive
-                          ? { background: 'var(--hound)', color: 'var(--hound-ink)', borderColor: 'var(--hound)' }
-                          : { borderColor: 'var(--line-2)', color: 'var(--ink-2)' }
+                          ? { background: 'var(--hound)', color: 'var(--hound-ink)' }
+                          : { background: 'var(--paper-3)', color: 'var(--ink-2)' }
                       }
                     >
-                      {String(i + 1).padStart(2, '0')}
+                      {exclusive ? 'Mailhound only' : c.who}
                     </span>
-                    {i < CHECKS.length - 1 && <span className="w-px flex-1 bg-line" />}
                   </div>
-                  {/* content */}
-                  <div className={`min-w-0 pb-8 ${i === 0 ? '' : 'pt-1'}`}>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-base font-semibold text-ink">{c.name}</h3>
-                      <span
-                        className="rounded-full px-2 py-0.5 font-mono text-[0.65rem] uppercase tracking-wider"
-                        style={
-                          exclusive
-                            ? { background: 'var(--hound)', color: 'var(--hound-ink)' }
-                            : { background: 'var(--paper-3)', color: 'var(--ink-2)' }
-                        }
-                      >
-                        {exclusive ? 'Mailhound only' : c.who}
-                      </span>
-                    </div>
-                    <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-ink-2">{c.desc}</p>
-                  </div>
-                </li>
-              )
-            })}
-          </ol>
+                  <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-ink-2">{c.desc}</p>
+                </div>
+              </li>
+            )
+          })}
+        </ol>
+      </Section>
+
+      {/* Data handling — honest trust */}
+      <Section tint>
+        <SectionHeading
+          eyebrow="Handled with care"
+          title="Serious about your list and your sender reputation"
+          lede="No fine print games. Here’s exactly how your data and payments are handled."
+        />
+        <div className="mt-12">
+          <TrustBand />
         </div>
-      </section>
+      </Section>
 
       {/* Rates */}
-      <section id="pricing" className="border-t border-line bg-paper-2/50">
-        <div className="mx-auto max-w-6xl px-6 py-20 sm:py-28">
-          <div className="max-w-2xl">
-            <p className="eyebrow">The rates</p>
-            <h2 className="display mt-4 text-4xl font-semibold text-ink">
-              Buy once, use whenever. No subscriptions, no expiry.
-            </h2>
-            <p className="mt-4 text-ink-2">
-              Start with 300 free credits — no credit card. Every pack runs the full
-              seven-point engine and bulk CSV.
-            </p>
-          </div>
-          <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {CREDIT_PACKS.map(pack => (
-              <div key={pack.id} className="panel group flex flex-col p-6 transition-colors hover:border-hound">
+      <Section id="pricing">
+        <SectionHeading
+          eyebrow="The rates"
+          title="Buy once, use whenever. No subscriptions, no expiry."
+          lede="Start with 300 free verifications — no credit card. Every pack runs the full seven-point engine and bulk CSV."
+        />
+        <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {CREDIT_PACKS.map((pack, i) => (
+            <Reveal key={pack.id} delay={i * 60}>
+              <div className="panel group flex flex-col p-6 transition-all hover:border-hound hover:shadow-[var(--shadow-panel)]">
                 <p className="eyebrow">{pack.credits.toLocaleString()} verifications</p>
                 <p className="display mt-3 text-4xl font-semibold text-ink">
                   ${(pack.price / 100).toFixed(0)}
@@ -230,81 +232,48 @@ export default function Home() {
                   Buy pack
                 </Link>
               </div>
-            ))}
-          </div>
-          <p className="mt-8 font-mono text-xs text-ink-3">
-            All packs — 7-point engine · bulk CSV · credits never expire · no monthly minimums
-          </p>
+            </Reveal>
+          ))}
         </div>
-      </section>
+        <p className="mt-8 font-mono text-xs text-ink-3">
+          All packs — 7-point engine · bulk CSV · credits never expire · no monthly minimums
+        </p>
+      </Section>
 
-      {/* Closing */}
-      <section className="border-t border-line">
-        <div className="mx-auto max-w-3xl px-6 py-24 text-center">
-          <p className="eyebrow">Case closed</p>
-          <h2 className="display mx-auto mt-5 max-w-2xl text-4xl font-semibold text-ink sm:text-5xl">
-            Stop bleeding deliverability on dead inboxes.
-          </h2>
-          <p className="mt-5 text-ink-2">300 free credits. No credit card. Set up in about a minute.</p>
-          <Link href="/signup" className="btn-hound mt-8 !px-8 !py-4 text-lg">
-            Start free — 300 credits
-          </Link>
+      {/* FAQ */}
+      <Section tint>
+        <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
+          <SectionHeading
+            eyebrow="Before you ask"
+            title="The questions buyers actually send us"
+            lede="Straight answers on credits, pricing, and how the verdict is reached."
+          />
+          <div className="lg:pt-2">
+            <Faq items={FAQ} />
+          </div>
         </div>
-      </section>
+      </Section>
+
+      <CtaBand title="Stop bleeding deliverability on dead inboxes." />
 
       <SiteFooter />
     </>
   )
 }
 
-// A static example of a returned verdict — shows the signature stamp and
-// evidence ledger at rest, so the hero previews the product's one trick.
-const SPECIMEN_EVIDENCE: [string, string, boolean][] = [
-  ['Syntax', 'RFC-5322 valid', true],
-  ['Domain', 'acmecorp.com resolves', true],
-  ['MX record', 'aspmx.l.google.com', true],
-  ['SMTP probe', 'Mailbox accepts', true],
-  ['Disposable', 'Not a throwaway', true],
-  ['Role address', 'Personal inbox', true],
-]
-
-function SpecimenReport() {
+function Stat({
+  value,
+  label,
+  borderR = false,
+}: {
+  value: React.ReactNode
+  label: string
+  borderR?: boolean
+}) {
   return (
-    <div className="panel overflow-hidden">
-      <div
-        className="flex items-start justify-between gap-4 border-b border-dashed border-line px-5 py-4"
-        style={{ background: 'var(--valid-bg)' }}
-      >
-        <div className="min-w-0">
-          <p className="eyebrow">Specimen · field report</p>
-          <p className="mt-1 truncate font-mono text-sm text-ink">priya@acmecorp.com</p>
-          <p className="mt-1 text-xs text-ink-2">
-            Confidence <span className="font-mono font-semibold text-valid">98</span>/100
-          </p>
-        </div>
-        <div className="stamp shrink-0 text-center text-valid">
-          <span className="block text-base leading-none">Valid</span>
-          <span className="mt-1 block text-[0.5rem] tracking-[0.2em] opacity-80">Deliverable</span>
-        </div>
-      </div>
-      <div className="px-5 py-4">
-        <p className="eyebrow mb-3">Evidence · 6 checks</p>
-        <ul className="space-y-2">
-          {SPECIMEN_EVIDENCE.map(([label, detail]) => (
-            <li key={label} className="flex items-baseline text-sm">
-              <span className="font-mono text-ink">{label}</span>
-              <span className="leader" />
-              <span className="max-w-[45%] truncate text-right font-mono text-xs text-ink-2">{detail}</span>
-              <span
-                className="ml-3 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[0.6rem] font-bold text-valid"
-                style={{ background: 'var(--valid-bg)' }}
-              >
-                ✓
-              </span>
-            </li>
-          ))}
-        </ul>
-      </div>
+    <div className={borderR ? 'sm:border-r sm:border-line' : ''}>
+      <dt className="font-mono text-lg font-semibold text-ink">{value}</dt>
+      <dd className="eyebrow mt-1">{label}</dd>
     </div>
   )
 }

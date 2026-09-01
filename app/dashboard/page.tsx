@@ -5,7 +5,8 @@ import { getBalance } from '@/lib/credits'
 import { VerifyForm } from '@/components/verify-form'
 import { BulkUploadForm } from '@/components/bulk-upload-form'
 import { PaymentSuccessBanner } from '@/components/payment-success-banner'
-import { Wordmark } from '@/components/site-chrome'
+import { AppHeader } from '@/components/app-header'
+import { CountUp } from '@/components/site/count-up'
 
 const statusColor: Record<string, string> = {
   completed: 'var(--valid)',
@@ -33,19 +34,7 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-line bg-paper/85 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <Wordmark />
-          <div className="flex items-center gap-4">
-            <span className="hidden font-mono text-xs text-ink-3 sm:inline">{user.email}</span>
-            <form action="/api/auth/signout" method="post">
-              <button className="rounded-full border border-line-2 px-3 py-1.5 text-sm text-ink-2 transition-colors hover:border-ink-3 hover:text-ink">
-                Sign out
-              </button>
-            </form>
-          </div>
-        </div>
-      </header>
+      <AppHeader email={user.email} current="/dashboard" />
 
       <main className="mx-auto w-full max-w-6xl space-y-8 px-6 py-10">
         <PaymentSuccessBanner />
@@ -55,7 +44,7 @@ export default async function DashboardPage() {
           <div className="panel flex flex-col p-6">
             <p className="eyebrow">Credit balance</p>
             <p className="display mt-2 text-5xl font-semibold text-hound">
-              {balance.toLocaleString()}
+              <CountUp value={balance} />
             </p>
             <p className="mt-1 font-mono text-xs text-ink-3">Never expires</p>
             <Link href="/pricing" className="btn-hound mt-5 w-full text-sm">

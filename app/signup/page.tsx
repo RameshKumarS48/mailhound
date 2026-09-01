@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { AuthShell, AuthField } from '@/components/auth-shell'
+import { analytics } from '@/lib/analytics'
 
 export default function SignupPage() {
   const router = useRouter()
@@ -17,6 +18,20 @@ export default function SignupPage() {
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true); setError('')
+    analytics.track('signup_started', { email })
+
+    const check = await fetch('/api/auth/validate-signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    })
+    if (!check.ok) {
+      const { error: msg } = await check.json()
+      setError(msg ?? 'Email not allowed')
+      setLoading(false)
+      return
+    }
+
     const supabase = createClient()
     const { error } = await supabase.auth.signUp({
       email,
@@ -24,6 +39,7 @@ export default function SignupPage() {
       options: { emailRedirectTo: `${window.location.origin}/dashboard` },
     })
     if (error) { setError(error.message); setLoading(false); return }
+    analytics.track('signup_completed', { email })
     setDone(true)
   }
 
@@ -36,7 +52,7 @@ export default function SignupPage() {
         <p className="text-sm leading-relaxed text-ink-2">
           We sent a confirmation link to{' '}
           <span className="font-mono text-ink">{email}</span>. Click it to activate
-          your account and claim your 300 free credits.
+          your account and claim your 300 free verifications.
         </p>
         <p className="mt-5 border-t border-dashed border-line pt-4 font-mono text-xs text-ink-3">
           No email in a few minutes? Check spam, or{' '}
@@ -50,7 +66,7 @@ export default function SignupPage() {
     <AuthShell
       eyebrow="Open a case"
       title="Start verifying for free"
-      subtitle="300 free credits · no credit card · credits never expire"
+      subtitle="300 free verifications · no credit card · never expire"
       footer={
         <>
           Already have an account?{' '}

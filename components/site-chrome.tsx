@@ -1,4 +1,6 @@
 import Link from "next/link"
+import { MobileNav } from "@/components/site/mobile-nav"
+import { ThemeToggle } from "@/components/site/theme-toggle"
 
 /* Postmark roundel with a hound's paw at the center — the cancellation
    stamp a letter earns once it has been checked. Scales with `size`. */
@@ -42,12 +44,15 @@ export function SiteNav({ authed = false }: { authed?: boolean }) {
     <header className="sticky top-0 z-40 border-b border-line bg-paper/85 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <Wordmark />
-        <nav className="flex items-center gap-1 sm:gap-2">
+
+        {/* Desktop nav */}
+        <nav className="hidden items-center gap-1 sm:flex sm:gap-2">
+          <ToolsMenu />
           <Link
-            href="/mx-lookup"
-            className="hidden rounded-full px-3 py-2 text-sm text-ink-2 transition-colors hover:text-ink sm:inline-block"
+            href="/developers"
+            className="rounded-full px-3 py-2 text-sm text-ink-2 transition-colors hover:text-ink"
           >
-            MX Lookup
+            Developers
           </Link>
           <Link
             href="/pricing"
@@ -55,8 +60,9 @@ export function SiteNav({ authed = false }: { authed?: boolean }) {
           >
             Pricing
           </Link>
+          <ThemeToggle className="ml-1" />
           {authed ? (
-            <Link href="/dashboard" className="btn-hound !px-4 !py-2 text-sm">
+            <Link href="/dashboard" className="btn-hound ml-1 !px-4 !py-2 text-sm">
               Dashboard
             </Link>
           ) : (
@@ -67,14 +73,58 @@ export function SiteNav({ authed = false }: { authed?: boolean }) {
               >
                 Log in
               </Link>
-              <Link href="/signup" className="btn-hound !px-4 !py-2 text-sm">
+              <Link href="/signup" className="btn-hound ml-1 !px-4 !py-2 text-sm">
                 Start free
               </Link>
             </>
           )}
         </nav>
+
+        {/* Mobile nav */}
+        <div className="flex items-center gap-1 sm:hidden">
+          <ThemeToggle />
+          <MobileNav authed={authed} />
+        </div>
       </div>
     </header>
+  )
+}
+
+const TOOLS: [string, string][] = [
+  ["MX Lookup", "/mx-lookup"],
+  ["Domain Health", "/domain-health"],
+  ["Blacklist Check", "/blacklist"],
+  ["Email Finder", "/email-finder"],
+]
+
+/* CSS-only dropdown (hover + keyboard focus-within) so this stays a Server
+   Component. The trigger is a real link to the tools hub for no-JS/touch users. */
+function ToolsMenu() {
+  return (
+    <div className="group relative hidden sm:block">
+      <Link
+        href="/mx-lookup"
+        className="inline-flex items-center gap-1 rounded-full px-3 py-2 text-sm text-ink-2 transition-colors hover:text-ink group-focus-within:text-ink"
+      >
+        Tools
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true" className="mt-0.5 opacity-60">
+          <path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </Link>
+      <div className="invisible absolute left-0 top-full z-50 min-w-48 pt-2 opacity-0 transition-all group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+        <div className="panel overflow-hidden p-1">
+          {TOOLS.map(([label, href]) => (
+            <Link
+              key={href}
+              href={href}
+              className="block rounded-lg px-3 py-2 text-sm text-ink-2 transition-colors hover:bg-paper-3 hover:text-ink"
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -90,13 +140,25 @@ export function SiteFooter() {
               risky address before you hit send.
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-10 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-10 sm:grid-cols-3 lg:grid-cols-5">
             <FooterCol
               title="Product"
               links={[
                 ["Verify", "/"],
                 ["Pricing", "/pricing"],
-                ["MX Lookup", "/mx-lookup"],
+                ["Monitoring", "/monitoring"],
+              ]}
+            />
+            <FooterCol
+              title="Free tools"
+              links={TOOLS}
+            />
+            <FooterCol
+              title="Developers"
+              links={[
+                ["API Docs", "/docs"],
+                ["Developer Portal", "/developers"],
+                ["Key Dashboard", "/developers/dashboard"],
               ]}
             />
             <FooterCol

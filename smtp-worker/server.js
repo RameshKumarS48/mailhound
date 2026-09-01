@@ -9,10 +9,18 @@
  *   API_KEY        Shared secret — set this and pass X-Api-Key header from Next.js
  *   HELO_DOMAIN    Your domain for EHLO (e.g. mailhound.xyz)
  *   MAIL_FROM      Sender for MAIL FROM (e.g. verify@mailhound.xyz)
+ *
+ * Endpoints:
+ *   GET /verify?email=            single-mailbox check (used by validation)
+ *   GET /health                   liveness
+ *   GET /server-test?domain=      deliverability probe: banner/STARTTLS/TLS/open-relay
+ *   GET /probe-multi?domain=&candidates=a,b,c   probe several mailboxes (email finder)
+ *   GET /dnsbl?target=            DNSBL/blacklist lookups for a domain or IP
  */
 
 const http  = require('http')
 const net   = require('net')
+const tls   = require('tls')
 const dns   = require('dns').promises
 
 const PORT        = Number(process.env.PORT)        || 3001
@@ -161,6 +169,269 @@ async function verifyEmail(email) {
   }
 }
 
+// ── Sequential SMTP client (for /server-test) ────────────────────────────────
+// Unlike smtpProbe's fire-and-forget state machine, server-test needs to read
+// responses one at a time and swap the socket to TLS mid-session, so it uses a
+// small awaitable reader that buffers whole responses across data chunks.
+
+function smtpReader(sock) {
+  const state = { buf: '', waiter: null, collected: [] }
+  function onData(chunk) {
+    state.buf += chunk
+    const lines = state.buf.split('\r\n')
+    state.buf = lines.pop()
+    for (const line of lines) {
+      if (!line.trim()) continue
+      state.collected.push(line)
+      const isLast = line[3] !== '-'
+      if (isLast && state.waiter) {
+        const code = parseInt(line.slice(0, 3), 10)
+        const w = state.waiter
+        const c = state.collected
+        state.waiter = null
+        state.collected = []
+        w({ code, lines: c })
+      }
+    }
+  }
+  sock.on('data', onData)
+  return {
+    read(timeoutMs) {
+      return new Promise((resolve, reject) => {
+        const t = setTimeout(() => { state.waiter = null; reject(new Error('read timeout')) }, timeoutMs)
+        state.waiter = (r) => { clearTimeout(t); resolve(r) }
+      })
+    },
+    stop() { sock.off('data', onData) },
+  }
+}
+
+function sendLine(sock, cmd) {
+  return new Promise((resolve) => { try { sock.write(cmd + '\r\n', resolve) } catch { resolve() } })
+}
+
+// Probe MAIL FROM + RCPT to an unrelated external domain. Acceptance of an
+// external recipient (that this server has no business relaying for) is the
+// classic open-relay signal. We never send DATA, so no mail is transmitted.
+async function relayTest(sock, reader, result) {
+  try {
+    await sendLine(sock, `MAIL FROM:<${MAIL_FROM}>`)
+    const mf = await reader.read(TIMEOUT_MS)
+    if (mf.code >= 400 && mf.code < 500) { result.greylisted = true; return }
+    if (mf.code !== 250) return
+    await sendLine(sock, 'RCPT TO:<relay-probe@ietf.org>')
+    const rc = await reader.read(TIMEOUT_MS)
+    if (rc.code >= 400 && rc.code < 500) result.greylisted = true
+    result.openRelay = (rc.code === 250 || rc.code === 251)
+    try { await sendLine(sock, 'RSET'); await reader.read(TIMEOUT_MS) } catch {}
+  } catch {}
+}
+
+async function serverTest(domain) {
+  const t0 = Date.now()
+  const result = {
+    domain, mxHost: null, reachable: false, connectMs: null, banner: null,
+    starttls: false, tls: { upgraded: false, version: null }, openRelay: false,
+    greylisted: false, error: null,
+  }
+
+  try {
+    result.mxHost = await getMXHost(domain)
+  } catch (e) {
+    result.error = `MX lookup failed: ${e.message}`
+    return result
+  }
+
+  let socket
+  try {
+    socket = await new Promise((resolve, reject) => {
+      const s = net.createConnection({ host: result.mxHost, port: 25 })
+      s.setTimeout(TIMEOUT_MS)
+      s.once('connect', () => resolve(s))
+      s.once('timeout', () => reject(new Error('connect timeout')))
+      s.once('error', (e) => reject(e))
+    })
+  } catch (e) {
+    result.error = `Connect failed: ${e.code || e.message}`
+    return result
+  }
+
+  socket.setEncoding('utf8')
+  socket.setTimeout(TIMEOUT_MS)
+  result.reachable = true
+  result.connectMs = Date.now() - t0
+
+  const reader = smtpReader(socket)
+  try {
+    const banner = await reader.read(TIMEOUT_MS)
+    result.banner = (banner.lines[0] || '').slice(0, 200)
+    if (banner.code !== 220) { result.error = `Banner code ${banner.code}`; socket.destroy(); return result }
+
+    await sendLine(socket, `EHLO ${HELO_DOMAIN}`)
+    const ehlo = await reader.read(TIMEOUT_MS)
+    const caps = ehlo.lines.map((l) => l.slice(4).trim().toUpperCase())
+    result.starttls = caps.some((c) => c.startsWith('STARTTLS'))
+
+    if (result.starttls) {
+      await sendLine(socket, 'STARTTLS')
+      const st = await reader.read(TIMEOUT_MS)
+      if (st.code === 220) {
+        reader.stop()
+        try {
+          const tlsSocket = await new Promise((resolve, reject) => {
+            const ts = tls.connect(
+              { socket, servername: result.mxHost, rejectUnauthorized: false },
+              () => resolve(ts)
+            )
+            ts.setTimeout(TIMEOUT_MS)
+            ts.once('error', reject)
+          })
+          tlsSocket.setEncoding('utf8')
+          result.tls.upgraded = true
+          result.tls.version = tlsSocket.getProtocol()
+          const tlsReader = smtpReader(tlsSocket)
+          await sendLine(tlsSocket, `EHLO ${HELO_DOMAIN}`)
+          await tlsReader.read(TIMEOUT_MS)
+          await relayTest(tlsSocket, tlsReader, result)
+          try { await sendLine(tlsSocket, 'QUIT') } catch {}
+          tlsSocket.destroy()
+          return result
+        } catch (e) {
+          result.tls.error = e.code || e.message
+          try { socket.destroy() } catch {}
+          return result
+        }
+      }
+    }
+
+    // No STARTTLS (or it wasn't advertised) — run the relay test in plaintext.
+    await relayTest(socket, reader, result)
+    try { await sendLine(socket, 'QUIT') } catch {}
+    socket.destroy()
+    return result
+  } catch (e) {
+    result.error = result.error || e.message
+    try { socket.destroy() } catch {}
+    return result
+  }
+}
+
+// ── Multi-candidate probe (for /probe-multi, email finder) ───────────────────
+
+async function probeMulti(domain, candidates) {
+  let mxHost
+  try {
+    mxHost = await getMXHost(domain)
+  } catch (e) {
+    return { domain, mxHost: null, catchAll: false, unreachable: true, error: `MX lookup failed: ${e.message}`, results: candidates.map((a) => ({ address: a, exists: 'unknown' })) }
+  }
+
+  const bogus = `xhnd_verify_nxdomain_${Date.now()}@${domain}`
+  const catchAllProbe = await smtpProbe(mxHost, bogus)
+
+  if (catchAllProbe.ok === true) {
+    return { domain, mxHost, catchAll: true, results: candidates.map((a) => ({ address: a, exists: 'unknown' })) }
+  }
+  if (catchAllProbe.ok === null && (
+    catchAllProbe.detail.includes('timeout') ||
+    catchAllProbe.detail.includes('TCP error') ||
+    catchAllProbe.detail.includes('rejected')
+  )) {
+    return { domain, mxHost, catchAll: false, unreachable: true, results: candidates.map((a) => ({ address: a, exists: 'unknown' })) }
+  }
+
+  // Probe candidates one at a time (many MX servers throttle parallel sessions).
+  // Stop early on the first accepted mailbox.
+  const results = []
+  for (const addr of candidates) {
+    const p = await smtpProbe(mxHost, addr)
+    const exists = p.ok === true ? 'yes' : p.ok === false ? 'no' : 'unknown'
+    results.push({ address: addr, exists })
+    if (exists === 'yes') break
+  }
+  return { domain, mxHost, catchAll: false, results }
+}
+
+// ── DNSBL / blacklist lookups (for /dnsbl) ───────────────────────────────────
+
+const IP_DNSBL_ZONES = [
+  'zen.spamhaus.org',
+  'bl.spamcop.net',
+  'b.barracudacentral.org',
+  'dnsbl.sorbs.net',
+  'dnsbl-1.uceprotect.net',
+  'psbl.surriel.com',
+  'cbl.abuseat.org',
+]
+const DOMAIN_DNSBL_ZONES = [
+  'dbl.spamhaus.org',
+  'multi.surbl.org',
+]
+
+function reverseIp(ip) {
+  return ip.split('.').reverse().join('.')
+}
+
+async function checkZone(query, zone) {
+  try {
+    const addrs = await dns.resolve4(`${query}.${zone}`)
+    // Spamhaus & friends return 127.255.255.x when a query is refused (e.g. from
+    // a public/over-quota resolver). That is NOT a listing — flag it as an error.
+    const errorCodes = addrs.filter((a) => a.startsWith('127.255.255.'))
+    if (addrs.length > 0 && errorCodes.length === addrs.length) {
+      return { zone, listed: false, error: 'query refused (resolver limit / not registered)' }
+    }
+    let txt = null
+    try { const t = await dns.resolveTxt(`${query}.${zone}`); txt = t.flat().join(' ').slice(0, 300) } catch {}
+    return { zone, listed: addrs.length > 0, codes: addrs, txt }
+  } catch (e) {
+    // NXDOMAIN is the normal "not listed" answer.
+    if (e.code === 'ENOTFOUND' || e.code === 'ENODATA') return { zone, listed: false }
+    return { zone, listed: false, error: e.code || e.message }
+  }
+}
+
+async function dnsblCheck(target) {
+  const isIp = /^\d{1,3}(\.\d{1,3}){3}$/.test(target)
+  const results = []
+  let ips = []
+  let domain = null
+
+  if (isIp) {
+    ips = [target]
+  } else {
+    domain = target.toLowerCase()
+    try {
+      const mx = await getMXHost(domain)
+      const a = await dns.resolve4(mx).catch(() => [])
+      ips.push(...a)
+    } catch {}
+    try { const a = await dns.resolve4(domain); ips.push(...a) } catch {}
+    ips = [...new Set(ips)]
+  }
+
+  for (const ip of ips) {
+    const rev = reverseIp(ip)
+    const zoneResults = await Promise.all(IP_DNSBL_ZONES.map((z) => checkZone(rev, z)))
+    zoneResults.forEach((r) => results.push({ ...r, target: ip, type: 'ip' }))
+  }
+
+  if (domain) {
+    const zoneResults = await Promise.all(DOMAIN_DNSBL_ZONES.map((z) => checkZone(domain, z)))
+    zoneResults.forEach((r) => results.push({ ...r, target: domain, type: 'domain' }))
+  }
+
+  const listed = results.filter((r) => r.listed)
+  return {
+    target,
+    ips,
+    listedCount: listed.length,
+    totalChecks: results.length,
+    listedOn: listed.map((r) => r.zone),
+    results,
+  }
+}
+
 // ── HTTP server ──────────────────────────────────────────────────────────────
 
 const server = http.createServer(async (req, res) => {
@@ -179,6 +450,64 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/health') {
     res.writeHead(200)
     return res.end(JSON.stringify({ ok: true, cacheSize: cache.size }))
+  }
+
+  if (url.pathname === '/server-test') {
+    const domain = url.searchParams.get('domain')
+    if (!domain) {
+      res.writeHead(400)
+      return res.end(JSON.stringify({ error: 'Missing domain param' }))
+    }
+    try {
+      const result = await serverTest(domain.trim().toLowerCase())
+      res.writeHead(200)
+      return res.end(JSON.stringify(result))
+    } catch (e) {
+      res.writeHead(500)
+      return res.end(JSON.stringify({ error: String(e) }))
+    }
+  }
+
+  if (url.pathname === '/probe-multi') {
+    const domain = url.searchParams.get('domain')
+    const candidates = (url.searchParams.get('candidates') || '')
+      .split(',').map((s) => s.trim()).filter(Boolean).slice(0, 20)
+    if (!domain || candidates.length === 0) {
+      res.writeHead(400)
+      return res.end(JSON.stringify({ error: 'Missing domain or candidates param' }))
+    }
+    try {
+      const result = await probeMulti(domain.trim().toLowerCase(), candidates)
+      res.writeHead(200)
+      return res.end(JSON.stringify(result))
+    } catch (e) {
+      res.writeHead(500)
+      return res.end(JSON.stringify({ error: String(e) }))
+    }
+  }
+
+  if (url.pathname === '/dnsbl') {
+    const targetRaw = url.searchParams.get('target')
+    if (!targetRaw) {
+      res.writeHead(400)
+      return res.end(JSON.stringify({ error: 'Missing target param' }))
+    }
+    const target = targetRaw.trim().toLowerCase()
+    const cacheKey = `dnsbl:${target}`
+    const cached = getCached(cacheKey)
+    if (cached) {
+      res.writeHead(200)
+      return res.end(JSON.stringify({ ...cached, cached: true }))
+    }
+    try {
+      const result = await dnsblCheck(target)
+      setCache(cacheKey, result)
+      res.writeHead(200)
+      return res.end(JSON.stringify(result))
+    } catch (e) {
+      res.writeHead(500)
+      return res.end(JSON.stringify({ error: String(e) }))
+    }
   }
 
   if (url.pathname !== '/verify') {
