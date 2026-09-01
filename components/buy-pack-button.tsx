@@ -1,11 +1,13 @@
 'use client'
 import { useState } from 'react'
+import { analytics } from '@/lib/analytics'
 
 export function BuyPackButton({ packId }: { packId: string }) {
   const [loading, setLoading] = useState(false)
 
   async function handleBuy() {
     setLoading(true)
+    analytics.track('buy_pack_clicked', { packId })
     try {
       const res = await fetch('/api/dodo/checkout', {
         method: 'POST',
@@ -17,7 +19,10 @@ export function BuyPackButton({ packId }: { packId: string }) {
         return
       }
       const { url } = await res.json()
-      if (url) window.location.href = url
+      if (url) {
+        analytics.track('checkout_redirected', { packId })
+        window.location.href = url
+      }
     } finally {
       setLoading(false)
     }

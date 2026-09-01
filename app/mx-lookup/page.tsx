@@ -1,8 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
-import { SiteNav, SiteFooter } from '@/components/site-chrome'
+import { ToolPage } from '@/components/site/tool-page'
 
 interface MXRecord { exchange: string; priority: number }
 
@@ -29,18 +28,18 @@ export default function MXLookupPage() {
   }
 
   return (
-    <>
-      <SiteNav />
-
-      <section className="mx-auto max-w-2xl px-6 py-16 sm:py-24">
-        <p className="eyebrow">Free tool · no account</p>
-        <h1 className="display mt-4 text-4xl font-semibold text-ink">MX record lookup</h1>
-        <p className="mt-3 text-ink-2">
-          See which mail servers are configured to receive email for any domain —
-          the first thing the hound checks before it knocks.
-        </p>
-
-        <form onSubmit={lookup} className="mt-8 flex flex-col gap-2 sm:flex-row">
+    <ToolPage
+      current="/mx-lookup"
+      title="MX record lookup"
+      intro="See which mail servers are configured to receive email for any domain — the first thing the hound checks before it knocks."
+      fieldNote={{
+        body: 'MX (Mail Exchange) records tell the internet which servers handle email for a domain. A domain with no MX records can’t receive email — which means every address on it is dead on arrival.',
+        ctaHref: '/signup',
+        ctaLabel: 'Verify full email addresses',
+      }}
+    >
+      <div>
+        <form onSubmit={lookup} className="flex flex-col gap-2 sm:flex-row">
           <input
             type="text"
             placeholder="example.com"
@@ -86,21 +85,7 @@ export default function MXLookupPage() {
             )}
           </div>
         )}
-
-        <div className="panel mt-10 p-6">
-          <p className="eyebrow">Field note</p>
-          <p className="mt-3 text-sm leading-relaxed text-ink-2">
-            MX (Mail Exchange) records tell the internet which servers handle email
-            for a domain. A domain with no MX records can’t receive email — which
-            means every address on it is dead on arrival.
-          </p>
-          <Link href="/signup" className="mt-4 inline-block font-medium text-hound hover:underline">
-            Verify full email addresses →
-          </Link>
-        </div>
-      </section>
-
-      <SiteFooter />
-    </>
+      </div>
+    </ToolPage>
   )
 }
