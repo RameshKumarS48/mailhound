@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
+import { analytics } from '@/lib/analytics'
 
 export function PaymentSuccessBanner() {
   const params = useSearchParams()
@@ -10,7 +11,7 @@ export function PaymentSuccessBanner() {
   useEffect(() => {
     if (params.get('success') === '1') {
       setShow(true)
-      // Clean the URL without reloading
+      analytics.track('payment_completed')
       router.replace('/dashboard', { scroll: false })
     }
   }, [params, router])

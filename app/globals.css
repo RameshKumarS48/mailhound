@@ -33,6 +33,28 @@
   --invalid: #ad3626;
   --invalid-bg: #efdcd4;
 
+  /* --- Fluid type scale (major-third-ish, clamped 375px→1280px) ---
+     Named by role so headings stop hard-coding arbitrary rem values. */
+  --step-xs:  clamp(0.79rem, 0.77rem + 0.09vw, 0.84rem);
+  --step-sm:  clamp(0.89rem, 0.86rem + 0.13vw, 0.96rem);   /* small / body-sm */
+  --step-md:  clamp(1.00rem, 0.96rem + 0.18vw, 1.10rem);   /* body */
+  --step-lg:  clamp(1.13rem, 1.06rem + 0.28vw, 1.31rem);   /* lede */
+  --step-xl:  clamp(1.27rem, 1.17rem + 0.42vw, 1.57rem);
+  --step-2xl: clamp(1.52rem, 1.36rem + 0.69vw, 2.07rem);   /* h3 */
+  --step-3xl: clamp(1.90rem, 1.63rem + 1.16vw, 2.75rem);   /* h2 */
+  --step-4xl: clamp(2.28rem, 1.86rem + 1.80vw, 3.66rem);
+  --step-5xl: clamp(2.74rem, 2.10rem + 2.72vw, 4.87rem);   /* hero */
+
+  /* --- Layout rhythm --- */
+  --gutter: 1.5rem;
+  --maxw: 72rem;
+  --section-y: clamp(4.5rem, 3.4rem + 4.7vw, 7rem);
+
+  /* --- Warm elevation (never gray — tinted with ink) --- */
+  --shadow-hair: 0 1px 0 var(--line-2);
+  --shadow-panel: 0 1px 2px rgba(27, 25, 23, 0.04), 0 6px 16px -10px rgba(27, 25, 23, 0.12);
+  --shadow-raise: 0 2px 5px rgba(27, 25, 23, 0.05), 0 20px 44px -18px rgba(27, 25, 23, 0.18);
+
   /* --- shadcn primitive mapping (so ui/* inherit the theme) --- */
   --background: var(--paper);
   --foreground: var(--ink);
@@ -63,6 +85,40 @@
   --sidebar-ring: var(--hound);
 }
 
+/* ============================================================
+   "The Casefile, after dark" — the same desk lit by a lamp.
+   Only the named tokens are re-derived; every component reads
+   through them, so the whole system flips with one class.
+   Teal brightens to an accent, verdict fg's lift, and their
+   tints go deep so a stamp still reads as a stamp.
+   ============================================================ */
+.dark {
+  --paper: #17150f;        /* desk at night — warm charcoal */
+  --paper-2: #201d16;      /* lifted card stock */
+  --paper-3: #100e09;      /* recessed / inset */
+  --ink: #f1ece0;          /* warm off-white */
+  --ink-2: #b7ae9d;        /* secondary text */
+  --ink-3: #989080;        /* faint / captions — AA-safe on both dark surfaces */
+  --line: #332f26;         /* hairline rules */
+  --line-2: #48422f;       /* stronger rules */
+
+  --hound: #4fb5a7;        /* brand — lamp-lit teal, now an accent */
+  --hound-2: #6cc6b9;      /* brand hover (brighter on dark) */
+  --hound-ink: #0c211e;    /* dark ink on the bright accent */
+
+  --valid: #5fbf88;
+  --valid-bg: #1a2a21;
+  --risky: #d79b40;
+  --risky-bg: #2b2415;
+  --invalid: #e26f5b;
+  --invalid-bg: #2e1c17;
+
+  /* Deeper, cooler elevation so panels lift off the dark desk */
+  --shadow-hair: 0 1px 0 var(--line-2);
+  --shadow-panel: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 20px -10px rgba(0, 0, 0, 0.55);
+  --shadow-raise: 0 2px 6px rgba(0, 0, 0, 0.35), 0 24px 50px -18px rgba(0, 0, 0, 0.7);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -88,6 +144,22 @@
   --font-display: var(--font-display);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
+
+  /* fluid text utilities: text-fluid-md, text-fluid-3xl, … */
+  --text-fluid-xs: var(--step-xs);
+  --text-fluid-sm: var(--step-sm);
+  --text-fluid-md: var(--step-md);
+  --text-fluid-lg: var(--step-lg);
+  --text-fluid-xl: var(--step-xl);
+  --text-fluid-2xl: var(--step-2xl);
+  --text-fluid-3xl: var(--step-3xl);
+  --text-fluid-4xl: var(--step-4xl);
+  --text-fluid-5xl: var(--step-5xl);
+
+  /* elevation utilities: shadow-hair, shadow-panel, shadow-raise */
+  --shadow-hair: var(--shadow-hair);
+  --shadow-panel: var(--shadow-panel);
+  --shadow-raise: var(--shadow-raise);
 
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
@@ -124,6 +196,12 @@
       radial-gradient(circle at 15% 12%, rgba(18, 77, 72, 0.04), transparent 42%),
       radial-gradient(circle at 88% 6%, rgba(169, 118, 26, 0.035), transparent 38%);
     background-attachment: fixed;
+  }
+  /* Dark desk: a low, warm lamp-glow instead of the daylight tint. */
+  .dark body {
+    background-image:
+      radial-gradient(circle at 15% 10%, rgba(79, 181, 167, 0.06), transparent 45%),
+      radial-gradient(circle at 88% 4%, rgba(215, 155, 64, 0.045), transparent 40%);
   }
   ::selection {
     background: var(--hound);
@@ -191,6 +269,30 @@
     background: var(--paper-2);
     border: 1px solid var(--line);
     border-radius: var(--radius-lg);
+  }
+
+  /* Canonical form field — one focus/disabled treatment everywhere.
+     .field is the squared default; add .field-pill for the round intake style. */
+  .field {
+    width: 100%;
+    border: 1px solid var(--line-2);
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: var(--radius-lg);
+    padding: 0.7rem 1rem;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .field::placeholder { color: var(--ink-3); }
+  .field:focus {
+    outline: none;
+    border-color: var(--hound);
+    box-shadow: 0 0 0 3px rgba(18, 77, 72, 0.18);
+  }
+  .field:disabled { opacity: 0.6; cursor: not-allowed; }
+  .field-pill {
+    border-radius: 999px;
+    background: var(--paper-2);
+    font-family: var(--font-mono), ui-monospace, monospace;
   }
 
   /* Verdict stamp — the signature. A pressed seal, slightly askew. */
