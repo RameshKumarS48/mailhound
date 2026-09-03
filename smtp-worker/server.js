@@ -124,7 +124,10 @@ function smtpProbe(mxHost, recipientEmail) {
       }
     })
 
-    socket.connect(25, mxHost)
+    // Force IPv4: this box's IPv6 has no PTR and is reputation-blocked by
+    // Microsoft/Outlook MXes (garbage RCPT verdicts). The IPv4 has valid rDNS
+    // and gets consistent, correct answers from every provider.
+    socket.connect({ port: 25, host: mxHost, family: 4 })
   })
 }
 
@@ -245,7 +248,7 @@ async function serverTest(domain) {
   let socket
   try {
     socket = await new Promise((resolve, reject) => {
-      const s = net.createConnection({ host: result.mxHost, port: 25 })
+      const s = net.createConnection({ host: result.mxHost, port: 25, family: 4 }) // IPv4 only — see smtpProbe note
       s.setTimeout(TIMEOUT_MS)
       s.once('connect', () => resolve(s))
       s.once('timeout', () => reject(new Error('connect timeout')))
