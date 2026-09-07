@@ -4,18 +4,12 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Menu, X } from 'lucide-react'
+import { SOLUTION_GROUPS } from '@/components/site/solutions'
 
-/* Accessible mobile menu. The old CSS-only nav hid Tools and Developers on
+/* Accessible mobile menu. The old CSS-only nav hid Solutions and Developers on
    small screens entirely — mobile users could not reach them. This exposes the
-   full link set, traps nothing the user can't escape (Esc + overlay close),
-   locks body scroll while open, and closes on navigation. */
-
-const TOOLS: [string, string][] = [
-  ['MX Lookup', '/mx-lookup'],
-  ['Domain Health', '/domain-health'],
-  ['Blacklist Check', '/blacklist'],
-  ['Email Finder', '/email-finder'],
-]
+   full grouped link set, traps nothing the user can't escape (Esc + overlay
+   close), locks body scroll while open, and closes on navigation. */
 
 export function MobileNav({ authed = false }: { authed?: boolean }) {
   const [open, setOpen] = useState(false)
@@ -54,16 +48,23 @@ export function MobileNav({ authed = false }: { authed?: boolean }) {
 
       {open && (
         <div className="fixed inset-x-0 top-16 bottom-0 z-50 overflow-y-auto border-t border-line bg-paper px-6 py-6">
-          <p className="eyebrow">Free tools</p>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            {TOOLS.map(([label, href]) => (
-              <Link
-                key={href}
-                href={href}
-                className="panel px-3 py-2.5 text-sm text-ink-2 transition-colors hover:text-ink"
-              >
-                {label}
-              </Link>
+          <p className="eyebrow mb-4">Solutions</p>
+          <div className="space-y-5">
+            {SOLUTION_GROUPS.map(group => (
+              <div key={group.title}>
+                <p className="font-mono text-xs uppercase tracking-wider text-ink-3">{group.title}</p>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  {group.items.map(item => (
+                    <Link
+                      key={`${group.title}-${item.label}`}
+                      href={item.href}
+                      className="panel px-3 py-2.5 text-sm text-ink-2 transition-colors hover:text-ink"
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
 

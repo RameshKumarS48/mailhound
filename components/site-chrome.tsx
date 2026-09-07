@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { MobileNav } from "@/components/site/mobile-nav"
 import { ThemeToggle } from "@/components/site/theme-toggle"
+import { SOLUTION_GROUPS } from "@/components/site/solutions"
 
 /* Postmark roundel with a hound's paw at the center — the cancellation
    stamp a letter earns once it has been checked. Scales with `size`. */
@@ -47,7 +48,7 @@ export function SiteNav({ authed = false }: { authed?: boolean }) {
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-1 sm:flex sm:gap-2">
-          <ToolsMenu />
+          <SolutionsMenu />
           <Link
             href="/developers"
             className="rounded-full px-3 py-2 text-sm text-ink-2 transition-colors hover:text-ink"
@@ -97,30 +98,42 @@ const TOOLS: [string, string][] = [
   ["Email Finder", "/email-finder"],
 ]
 
-/* CSS-only dropdown (hover + keyboard focus-within) so this stays a Server
-   Component. The trigger is a real link to the tools hub for no-JS/touch users. */
-function ToolsMenu() {
+/* CSS-only mega-menu (hover + keyboard focus-within) so this stays a Server
+   Component. The trigger is a real link to a tool hub for no-JS/touch users;
+   the panel groups every shipped surface the way a deliverability team works
+   a list — clean it, build reputation, keep watch. */
+function SolutionsMenu() {
   return (
     <div className="group relative hidden sm:block">
       <Link
-        href="/mx-lookup"
+        href="/domain-health"
         className="inline-flex items-center gap-1 rounded-full px-3 py-2 text-sm text-ink-2 transition-colors hover:text-ink group-focus-within:text-ink"
       >
-        Tools
-        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true" className="mt-0.5 opacity-60">
+        Solutions
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true" className="mt-0.5 opacity-60 transition-transform group-hover:rotate-180 group-focus-within:rotate-180">
           <path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </Link>
-      <div className="invisible absolute left-0 top-full z-50 min-w-48 pt-2 opacity-0 transition-all group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
-        <div className="panel overflow-hidden p-1">
-          {TOOLS.map(([label, href]) => (
-            <Link
-              key={href}
-              href={href}
-              className="block rounded-lg px-3 py-2 text-sm text-ink-2 transition-colors hover:bg-paper-3 hover:text-ink"
-            >
-              {label}
-            </Link>
+      <div className="invisible absolute left-1/2 top-full z-50 w-[min(46rem,calc(100vw-3rem))] -translate-x-1/2 pt-2 opacity-0 transition-all group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+        <div className="panel grid grid-cols-3 gap-1 p-3">
+          {SOLUTION_GROUPS.map(group => (
+            <div key={group.title} className="flex flex-col">
+              <p className="eyebrow px-3 pb-1 pt-2">{group.title}</p>
+              {group.items.map(item => (
+                <Link
+                  key={`${group.title}-${item.label}`}
+                  href={item.href}
+                  className="group/item rounded-lg px-3 py-2 transition-colors hover:bg-paper-3"
+                >
+                  <span className="block text-sm font-medium text-ink transition-colors group-hover/item:text-hound">
+                    {item.label}
+                  </span>
+                  <span className="mt-0.5 block text-xs leading-snug text-ink-3">
+                    {item.desc}
+                  </span>
+                </Link>
+              ))}
+            </div>
           ))}
         </div>
       </div>
