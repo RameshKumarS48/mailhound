@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { VerdictMasthead } from '@/components/site/verdict-masthead'
 
 /* The hero's signature: a sample field report that assembles itself once on
    load — evidence rows tick in one by one, then the verdict stamp drops. It's
@@ -43,27 +44,18 @@ export function HeroSpecimen() {
 
   return (
     <div className="panel overflow-hidden" style={{ boxShadow: 'var(--shadow-panel)' }}>
-      <div
-        className="flex items-start justify-between gap-4 border-b border-dashed border-line px-5 py-4"
-        style={{ background: 'var(--valid-bg)' }}
-      >
-        <div className="min-w-0">
-          <p className="eyebrow">Sample · field report</p>
-          <p className="mt-1 truncate font-mono text-sm text-ink">priya@acmecorp.com</p>
-          <p className="mt-1 text-xs text-ink-2">
-            Confidence <span className="font-mono font-semibold text-valid">98</span>/100
-          </p>
-        </div>
-        <div
-          className={`stamp shrink-0 text-center text-valid ${stamped ? 'stamp-in' : ''}`}
-          style={{ opacity: stamped ? 0.94 : 0 }}
-        >
-          <span className="block text-base leading-none">Valid</span>
-          <span className="mt-1 block text-[0.5rem] tracking-[0.2em] opacity-80">Deliverable</span>
-        </div>
-      </div>
+      <VerdictMasthead
+        eyebrow="Sample · result"
+        email="priya@acmecorp.com"
+        score={98}
+        label="Valid"
+        verdict="Deliverable"
+        color="var(--valid)"
+        bg="var(--valid-bg)"
+        stamped={stamped}
+      />
       <div className="px-5 py-4">
-        <p className="eyebrow mb-3">Evidence · 6 checks</p>
+        <p className="eyebrow mb-3">Checks · 6 run</p>
         <ul className="space-y-2">
           {EVIDENCE.map(([label, detail], i) => (
             <li

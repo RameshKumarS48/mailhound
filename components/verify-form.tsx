@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { VerificationResult } from '@/lib/verification/types'
+import { VerdictMasthead } from '@/components/site/verdict-masthead'
 import { analytics } from '@/lib/analytics'
 
 const statusMeta: Record<
@@ -77,7 +78,7 @@ export function VerifyForm({ compact = false }: { compact?: boolean }) {
           />
         </div>
         <button type="submit" disabled={loading || !email.trim()} className="btn-hound h-13 shrink-0 px-7">
-          {loading ? 'Sniffing…' : 'Run the hound'}
+          {loading ? 'Verifying…' : 'Verify email'}
         </button>
       </form>
 
@@ -87,23 +88,15 @@ export function VerifyForm({ compact = false }: { compact?: boolean }) {
 
       {result && meta && (
         <div className="panel mt-4 overflow-hidden">
-          {/* masthead */}
-          <div
-            className="flex items-start justify-between gap-4 border-b border-dashed border-line px-5 py-4 sm:px-6"
-            style={{ background: meta.bg }}
-          >
-            <div className="min-w-0">
-              <p className="eyebrow">Field report</p>
-              <p className="mt-1 truncate font-mono text-sm text-ink sm:text-base">{result.email}</p>
-              <p className="mt-1 text-xs text-ink-2">
-                Confidence <span className="font-mono font-semibold" style={{ color: meta.color }}>{result.score}</span>/100
-              </p>
-            </div>
-            <div className="stamp stamp-in shrink-0 text-center" style={{ color: meta.color }}>
-              <span className="block text-base leading-none">{meta.label}</span>
-              <span className="mt-1 block text-[0.5rem] tracking-[0.2em] opacity-80">{meta.verdict}</span>
-            </div>
-          </div>
+          <VerdictMasthead
+            eyebrow="Result"
+            email={result.email}
+            score={result.score}
+            label={meta.label}
+            verdict={meta.verdict}
+            color={meta.color}
+            bg={meta.bg}
+          />
 
           {/* verdict note */}
           <div className="border-b border-line px-5 py-3 sm:px-6">
@@ -116,7 +109,7 @@ export function VerifyForm({ compact = false }: { compact?: boolean }) {
           {/* evidence ledger */}
           {!compact && (
             <div className="px-5 py-4 sm:px-6">
-              <p className="eyebrow mb-3">Evidence · {checks.length} checks</p>
+              <p className="eyebrow mb-3">Checks · {checks.length} run</p>
               <ul className="space-y-2">
                 {checks.map(([key, check], i) => (
                   <li

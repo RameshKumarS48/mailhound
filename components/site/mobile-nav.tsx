@@ -5,15 +5,30 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Menu, X } from 'lucide-react'
 import { SOLUTION_GROUPS } from '@/components/site/solutions'
+import { useAuthed } from '@/components/site/use-authed'
 
 /* Accessible mobile menu. The old CSS-only nav hid Solutions and Developers on
    small screens entirely — mobile users could not reach them. This exposes the
    full grouped link set, traps nothing the user can't escape (Esc + overlay
-   close), locks body scroll while open, and closes on navigation. */
+   close), locks body scroll while open, and closes on navigation.
 
-export function MobileNav({ authed = false }: { authed?: boolean }) {
+   Two modes:
+   - Marketing (default): resolves auth client-side so a signed-in visitor sees
+     a Dashboard link instead of Start free / Log in.
+   - App: pass `appNav` (the signed-in tabs) to render them plus a Sign out
+     action — this is the *only* navigation signed-in users had on mobile
+     before, which was nothing. */
+
+export function MobileNav({
+  appNav,
+}: {
+  appNav?: { href: string; label: string }[]
+}) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
+  const authedState = useAuthed()
+  const isApp = !!appNav
+  const authed = isApp || authedState === true
 
   // Close on route change.
   useEffect(() => {
@@ -35,7 +50,7 @@ export function MobileNav({ authed = false }: { authed?: boolean }) {
   }, [open])
 
   return (
-    <div className="sm:hidden">
+    <div>
       <button
         type="button"
         aria-label={open ? 'Close menu' : 'Open menu'}
@@ -48,6 +63,24 @@ export function MobileNav({ authed = false }: { authed?: boolean }) {
 
       {open && (
         <div className="fixed inset-x-0 top-16 bottom-0 z-50 overflow-y-auto border-t border-line bg-paper px-6 py-6">
+          {isApp && (
+            <div className="mb-6 flex flex-col divide-y divide-line border-y border-line">
+              {appNav.map(item => {
+                const on = pathname === item.href
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    aria-current={on ? 'page' : undefined}
+                    className={`py-3.5 ${on ? 'font-medium text-ink' : 'text-ink-2'}`}
+                  >
+                    {item.label}
+                  </Link>
+                )
+              })}
+            </div>
+          )}
+
           <p className="eyebrow mb-4">Solutions</p>
           <div className="space-y-5">
             {SOLUTION_GROUPS.map(group => (
@@ -75,8 +108,12 @@ export function MobileNav({ authed = false }: { authed?: boolean }) {
           </div>
 
           <div className="mt-6 flex flex-col gap-3">
-            {authed ? (
-              <Link href="/dashboard" className="btn-hound w-full">Dashboard</Link>
+            {isApp ? (
+              <form action="/api/auth/signout" method="post">
+                <button type="submit" className="btn-ghost w-full">Sign out</button>
+              </form>
+            ) : authed ? (
+              <Link href="/home" className="btn-hound w-full">Dashboard</Link>
             ) : (
               <>
                 <Link href="/signup" className="btn-hound w-full">Start free — 300 verifications</Link>

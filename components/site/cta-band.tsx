@@ -1,12 +1,13 @@
 import Link from 'next/link'
 import { Reveal } from './reveal'
+import { Magnetic } from './motion/magnetic'
 
-/* The closing "case closed" call to action, shared across marketing pages so
-   the sign-off reads identically everywhere. */
+/* The closing call to action, shared across marketing pages so the sign-off
+   reads identically everywhere. */
 export function CtaBand({
-  eyebrow = 'Case closed',
+  eyebrow = 'Ready when you are',
   title,
-  sub = '300 free verifications. No credit card. Never expire.',
+  sub = '300 free verifications. No credit card. Credits never expire.',
   cta = 'Start free — 300 verifications',
   href = '/signup',
 }: {
@@ -25,9 +26,13 @@ export function CtaBand({
             {title}
           </h2>
           <p className="mt-5 text-ink-2 text-fluid-md">{sub}</p>
-          <Link href={href} className="btn-hound mt-8 !px-8 !py-4 text-lg">
-            {cta}
-          </Link>
+          <div className="mt-8">
+            <Magnetic>
+              <Link href={href} className="btn-hound !px-8 !py-4 text-lg">
+                {cta}
+              </Link>
+            </Magnetic>
+          </div>
         </Reveal>
       </div>
     </section>

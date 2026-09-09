@@ -1,6 +1,8 @@
 import Link from "next/link"
 import { MobileNav } from "@/components/site/mobile-nav"
+import { NavCta } from "@/components/site/nav-cta"
 import { ThemeToggle } from "@/components/site/theme-toggle"
+import { ScrollProgress } from "@/components/site/motion/scroll-progress"
 import { SOLUTION_GROUPS } from "@/components/site/solutions"
 
 /* Postmark roundel with a hound's paw at the center — the cancellation
@@ -40,8 +42,10 @@ export function Wordmark({ className = "" }: { className?: string }) {
   )
 }
 
-export function SiteNav({ authed = false }: { authed?: boolean }) {
+export function SiteNav() {
   return (
+    <>
+    <ScrollProgress />
     <header className="sticky top-0 z-40 border-b border-line bg-paper/85 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <Wordmark />
@@ -62,32 +66,17 @@ export function SiteNav({ authed = false }: { authed?: boolean }) {
             Pricing
           </Link>
           <ThemeToggle className="ml-1" />
-          {authed ? (
-            <Link href="/dashboard" className="btn-hound ml-1 !px-4 !py-2 text-sm">
-              Dashboard
-            </Link>
-          ) : (
-            <>
-              <Link
-                href="/login"
-                className="rounded-full px-3 py-2 text-sm text-ink-2 transition-colors hover:text-ink"
-              >
-                Log in
-              </Link>
-              <Link href="/signup" className="btn-hound ml-1 !px-4 !py-2 text-sm">
-                Start free
-              </Link>
-            </>
-          )}
+          <NavCta />
         </nav>
 
         {/* Mobile nav */}
         <div className="flex items-center gap-1 sm:hidden">
           <ThemeToggle />
-          <MobileNav authed={authed} />
+          <MobileNav />
         </div>
       </div>
     </header>
+    </>
   )
 }
 
@@ -102,7 +91,7 @@ const TOOLS: [string, string][] = [
    Component. The trigger is a real link to a tool hub for no-JS/touch users;
    the panel groups every shipped surface the way a deliverability team works
    a list — clean it, build reputation, keep watch. */
-function SolutionsMenu() {
+export function SolutionsMenu() {
   return (
     <div className="group relative hidden sm:block">
       <Link
@@ -149,8 +138,8 @@ export function SiteFooter() {
           <div className="max-w-xs">
             <Wordmark />
             <p className="mt-4 text-sm leading-relaxed text-ink-2">
-              The bloodhound for your list. We track down every dead, fake, and
-              risky address before you hit send.
+              Email verification that returns a real verdict. We catch the dead,
+              fake, and risky addresses before you hit send.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-10 sm:grid-cols-3 lg:grid-cols-5">
@@ -192,7 +181,7 @@ export function SiteFooter() {
           </div>
         </div>
         <div className="mt-12 flex flex-col items-start justify-between gap-2 border-t border-line pt-6 text-xs text-ink-3 sm:flex-row sm:items-center">
-          <span className="font-mono">© 2026 Mailhound — case closed on bad email.</span>
+          <span className="font-mono">© 2026 Mailhound — know before you send.</span>
           <span className="font-mono">mailhound.xyz</span>
         </div>
       </div>

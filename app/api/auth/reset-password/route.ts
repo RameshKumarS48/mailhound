@@ -7,7 +7,8 @@ export async function POST(req: NextRequest) {
 
   const supabase = await createClient()
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/update-password`,
+    // Exchange the recovery code for a session first, then land on the form.
+    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/auth/update-password`,
   })
 
   // Always return success — don't leak whether the email exists

@@ -49,5 +49,26 @@ export async function POST(req: NextRequest) {
   }
 
   const result = await verifyEmail(email)
+
+  // Persist single checks so they show up in the user's history (job_id NULL
+  // distinguishes a single check from a bulk-job row). Best-effort only: the
+  // user already paid the credit, so a history write must never fail or delay
+  // the response. Anonymous checks are not stored.
+  if (user) {
+    try {
+      await supabase.from('verification_results').insert({
+        user_id: user.id,
+        job_id: null,
+        email: result.email,
+        status: result.status,
+        reason: result.reason,
+        score: result.score,
+        raw_checks: result.checks,
+      })
+    } catch {
+      // swallow — history is non-critical
+    }
+  }
+
   return NextResponse.json(result)
 }

@@ -5,33 +5,33 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ============================================================
-   Mailhound — "The Casefile"
-   A forensic field-report identity. Warm bone paper, hunter-teal
-   brand ink, and a disciplined verdict spectrum (valid/risky/
+   Mailhound — "Quiet Signal"
+   A calm, editorial instrument. Soft cool paper, a calm-vitality
+   emerald accent, and a disciplined verdict spectrum (valid/risky/
    invalid) that only ever appears where it carries meaning.
    ============================================================ */
 
 :root {
   /* --- Named design tokens --- */
-  --paper: #efeadf;        /* warm bone — the desk */
-  --paper-2: #f6f2e9;      /* lifted card stock */
-  --paper-3: #e7e1d3;      /* recessed / inset */
-  --ink: #1b1917;          /* warm near-black */
-  --ink-2: #55504a;        /* secondary text */
-  --ink-3: #8a8478;        /* faint / captions */
-  --line: #ddd6c8;         /* hairline rules */
-  --line-2: #c9c0ad;       /* stronger rules */
+  --paper: #f5f6f3;        /* soft cool off-white — the page */
+  --paper-2: #fcfcfa;      /* near-white lifted card stock */
+  --paper-3: #eceee9;      /* recessed / inset */
+  --ink: #191c1a;          /* cool near-black, faint green undertone */
+  --ink-2: #565e58;        /* secondary text */
+  --ink-3: #6b726c;        /* faint / captions — AA-safe (4.5:1) on paper & paper-2 */
+  --line: #e4e6e0;         /* hairline rules */
+  --line-2: #d3d6ce;       /* stronger rules */
 
-  --hound: #124d48;        /* brand — hunter teal */
-  --hound-2: #0c3a36;      /* brand pressed */
-  --hound-ink: #f6f2e9;    /* text on brand */
+  --hound: #2f6e4e;        /* brand — calm-vitality emerald */
+  --hound-2: #275b40;      /* brand pressed */
+  --hound-ink: #f5f6f3;    /* text on brand */
 
-  --valid: #2f7d57;
-  --valid-bg: #e2ecdf;
-  --risky: #a9761a;
-  --risky-bg: #efe6cf;
-  --invalid: #ad3626;
-  --invalid-bg: #efdcd4;
+  --valid: #3d7539;        /* leaf green — leafier/warmer than brand emerald, AA on its tint */
+  --valid-bg: #e3eee5;
+  --risky: #8a5e12;        /* amber-brown — AA (4.7:1) on its tint */
+  --risky-bg: #f1e9d6;
+  --invalid: #b23a2a;
+  --invalid-bg: #f0ddd8;
 
   /* --- Fluid type scale (major-third-ish, clamped 375px→1280px) ---
      Named by role so headings stop hard-coding arbitrary rem values. */
@@ -49,6 +49,13 @@
   --gutter: 1.5rem;
   --maxw: 72rem;
   --section-y: clamp(4.5rem, 3.4rem + 4.7vw, 7rem);
+
+  /* --- Motion (shared by CSS + the `motion` JS layer, see motion-tokens.ts) --- */
+  --dur-fast: 160ms;
+  --dur-base: 320ms;
+  --dur-slow: 640ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-emphasized: cubic-bezier(0.2, 0.8, 0.2, 1);
 
   /* --- Warm elevation (never gray — tinted with ink) --- */
   --shadow-hair: 0 1px 0 var(--line-2);
@@ -86,32 +93,32 @@
 }
 
 /* ============================================================
-   "The Casefile, after dark" — the same desk lit by a lamp.
+   "Quiet Signal, after dark" — the same page under low light.
    Only the named tokens are re-derived; every component reads
    through them, so the whole system flips with one class.
-   Teal brightens to an accent, verdict fg's lift, and their
+   Emerald brightens to an accent, verdict fg's lift, and their
    tints go deep so a stamp still reads as a stamp.
    ============================================================ */
 .dark {
-  --paper: #17150f;        /* desk at night — warm charcoal */
-  --paper-2: #201d16;      /* lifted card stock */
-  --paper-3: #100e09;      /* recessed / inset */
-  --ink: #f1ece0;          /* warm off-white */
-  --ink-2: #b7ae9d;        /* secondary text */
-  --ink-3: #989080;        /* faint / captions — AA-safe on both dark surfaces */
-  --line: #332f26;         /* hairline rules */
-  --line-2: #48422f;       /* stronger rules */
+  --paper: #121413;        /* cool charcoal at night */
+  --paper-2: #1b1e1c;      /* lifted card stock */
+  --paper-3: #0d0f0e;      /* recessed / inset */
+  --ink: #eceee9;          /* cool off-white */
+  --ink-2: #a7aea8;        /* secondary text */
+  --ink-3: #828983;        /* faint / captions — AA-safe (4.5:1) on both dark surfaces */
+  --line: #2a2e2b;         /* hairline rules */
+  --line-2: #3b413d;       /* stronger rules */
 
-  --hound: #4fb5a7;        /* brand — lamp-lit teal, now an accent */
-  --hound-2: #6cc6b9;      /* brand hover (brighter on dark) */
-  --hound-ink: #0c211e;    /* dark ink on the bright accent */
+  --hound: #6fbf8f;        /* brand — brighter calm green, now an accent */
+  --hound-2: #86cfa1;      /* brand hover (brighter on dark) */
+  --hound-ink: #0c1710;    /* dark ink on the bright accent */
 
-  --valid: #5fbf88;
-  --valid-bg: #1a2a21;
-  --risky: #d79b40;
-  --risky-bg: #2b2415;
-  --invalid: #e26f5b;
-  --invalid-bg: #2e1c17;
+  --valid: #62c98a;
+  --valid-bg: #16271d;
+  --risky: #d6a24b;
+  --risky-bg: #2a2413;
+  --invalid: #e07059;
+  --invalid-bg: #2c1b16;
 
   /* Deeper, cooler elevation so panels lift off the dark desk */
   --shadow-hair: 0 1px 0 var(--line-2);
@@ -191,17 +198,15 @@
     background-color: var(--paper);
     color: var(--ink);
     font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-    /* faint paper grain — keeps the surface from reading flat/AI-flat */
+    /* faint atmosphere — one cool emerald wash keeps the surface from reading flat */
     background-image:
-      radial-gradient(circle at 15% 12%, rgba(18, 77, 72, 0.04), transparent 42%),
-      radial-gradient(circle at 88% 6%, rgba(169, 118, 26, 0.035), transparent 38%);
+      radial-gradient(circle at 12% 8%, rgba(47, 110, 78, 0.045), transparent 44%);
     background-attachment: fixed;
   }
-  /* Dark desk: a low, warm lamp-glow instead of the daylight tint. */
+  /* After dark: a low emerald glow instead of the daylight wash. */
   .dark body {
     background-image:
-      radial-gradient(circle at 15% 10%, rgba(79, 181, 167, 0.06), transparent 45%),
-      radial-gradient(circle at 88% 4%, rgba(215, 155, 64, 0.045), transparent 40%);
+      radial-gradient(circle at 12% 6%, rgba(111, 191, 143, 0.06), transparent 46%);
   }
   ::selection {
     background: var(--hound);
@@ -228,8 +233,8 @@
   .display {
     font-family: var(--font-display), Georgia, serif;
     font-optical-sizing: auto;
-    font-variation-settings: "SOFT" 0, "WONK" 1, "opsz" 144;
-    letter-spacing: -0.015em;
+    font-variation-settings: "SOFT" 24, "WONK" 0, "opsz" 144;
+    letter-spacing: -0.02em;
     line-height: 0.98;
   }
 
@@ -286,7 +291,7 @@
   .field:focus {
     outline: none;
     border-color: var(--hound);
-    box-shadow: 0 0 0 3px rgba(18, 77, 72, 0.18);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--hound) 18%, transparent);
   }
   .field:disabled { opacity: 0.6; cursor: not-allowed; }
   .field-pill {
@@ -310,6 +315,14 @@
   }
   .stamp-in { animation: stamp-in 0.5s cubic-bezier(0.2, 1.2, 0.35, 1) both; }
 
+  /* Infinite ticker — two identical copies translate one full width, seamless.
+     Frozen automatically under prefers-reduced-motion (below). */
+  .marquee-track { animation: marquee-x 34s linear infinite; }
+  .marquee-mask {
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  }
+
   /* Evidence ledger row with a dotted leader */
   .leader {
     flex: 1 1 auto;
@@ -330,6 +343,10 @@
 @keyframes tick-in {
   from { opacity: 0; transform: translateY(5px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes marquee-x {
+  to { transform: translateX(-100%); }
 }
 
 @media (prefers-reduced-motion: reduce) {

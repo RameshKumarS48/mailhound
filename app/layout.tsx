@@ -1,8 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import React from "react";
-import { Fraunces, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
+import { Fraunces, Hanken_Grotesk, IBM_Plex_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { AnalyticsProvider } from "@/components/analytics-provider";
+import { SessionSync } from "@/components/site/session-sync";
+import { MotionProvider } from "@/components/site/motion/motion-provider";
 import "./globals.css";
 
 const display = Fraunces({
@@ -13,7 +15,7 @@ const display = Fraunces({
   display: "swap",
 });
 
-const sans = IBM_Plex_Sans({
+const sans = Hanken_Grotesk({
   variable: "--font-sans",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
@@ -59,6 +61,16 @@ export const metadata: Metadata = {
   },
 };
 
+// theme-color tracks the paper surface so the browser chrome matches the page
+// in both schemes (mirrors the --paper token values in globals.css).
+export const viewport: Viewport = {
+  colorScheme: "light dark",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f5f6f3" },
+    { media: "(prefers-color-scheme: dark)", color: "#121413" },
+  ],
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
@@ -76,7 +88,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="min-h-full flex flex-col">
-        <AnalyticsProvider>{children}</AnalyticsProvider>
+        <SessionSync />
+        <MotionProvider>
+          <AnalyticsProvider>{children}</AnalyticsProvider>
+        </MotionProvider>
         <Analytics />
       </body>
     </html>

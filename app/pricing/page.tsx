@@ -5,6 +5,7 @@ import { BuyPackButton } from '@/components/buy-pack-button'
 import { SiteNav, SiteFooter } from '@/components/site-chrome'
 import { Section, SectionHeading } from '@/components/site/section'
 import { Reveal } from '@/components/site/reveal'
+import { StaggerGroup, StaggerItem } from '@/components/site/motion/stagger'
 import { Faq } from '@/components/site/faq'
 import { CtaBand } from '@/components/site/cta-band'
 
@@ -51,11 +52,11 @@ export default function PricingPage() {
 
       {/* Packs */}
       <Section divide={false} className="!pt-6">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {CREDIT_PACKS.map((pack, i) => {
+        <StaggerGroup className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {CREDIT_PACKS.map((pack) => {
             const featured = pack.id === 'pack_10k'
             return (
-              <Reveal key={pack.id} delay={i * 55}>
+              <StaggerItem key={pack.id} className="h-full">
                 <div
                   className={`panel group relative flex h-full flex-col p-6 transition-all hover:shadow-[var(--shadow-panel)] ${
                     featured ? 'border-hound ring-1 ring-hound/25' : 'hover:border-hound'
@@ -77,10 +78,10 @@ export default function PricingPage() {
                     <BuyPackButton packId={pack.id} />
                   </div>
                 </div>
-              </Reveal>
+              </StaggerItem>
             )
           })}
-        </div>
+        </StaggerGroup>
         <p className="mt-8 font-mono text-xs text-ink-3">
           Every pack — 7-point engine · bulk CSV · API access · credits never expire · no monthly minimum
         </p>
@@ -89,7 +90,7 @@ export default function PricingPage() {
       {/* Comparison */}
       <Section tint>
         <SectionHeading
-          eyebrow="The lineup"
+          eyebrow="How we compare"
           title="More checks, a real verdict, half the price"
           lede="Compared against how most email-verification tools price and behave. Figures are defensible ranges — where a number would be a guess, we say so."
         />
@@ -177,7 +178,7 @@ export default function PricingPage() {
       </Section>
 
       <CtaBand
-        eyebrow="Case closed"
+        eyebrow="Ready when you are"
         title="Start free. Pay only when you scale."
         sub="300 free verifications · no credit card · credits never expire"
       />

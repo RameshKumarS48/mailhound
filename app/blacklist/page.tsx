@@ -28,7 +28,7 @@ export default function BlacklistPage() {
     <ToolPage
       current="/blacklist"
       title="Blacklist check"
-      intro="The hound runs your domain or IP past every major blacklist — Spamhaus, SpamCop, Barracuda and the rest — and reports back which watchers have your name on file."
+      intro="We run your domain or IP past every major blacklist — Spamhaus, SpamCop, Barracuda and the rest — and report back which ones have your name on file."
       fieldNote={{
         body: 'A single blacklisting can quietly kill your delivery rate for weeks before you notice. These DNSBLs are what inbox providers consult to decide whether your mail is trustworthy — so a clean board is table stakes for landing in the inbox.',
         ctaHref: '/monitoring',

@@ -1,15 +1,19 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { m } from 'motion/react'
+import { DUR, EASE_OUT } from './motion/motion-tokens'
 
-/* One-shot scroll reveal. Fades + lifts content into place the first time it
-   enters the viewport, then stays put. Dependency-free (IntersectionObserver)
-   to keep the marketing bundle tiny, and fully disabled under reduced-motion:
-   content is visible from the first paint, motion only enhances. */
+/* One-shot scroll reveal: fades + lifts content into place the first time it
+   enters the viewport, then stays put. Now part of the shared `motion` system
+   (via the app-wide MotionProvider) so it honors reduced-motion centrally —
+   content is visible/final with motion off; motion only enhances.
+
+   The prop signature is unchanged from the previous IntersectionObserver
+   version, so every existing call site keeps working untouched. */
 export function Reveal({
   children,
   delay = 0,
-  as: Tag = 'div',
+  as = 'div',
   className = '',
 }: {
   children: React.ReactNode
@@ -17,45 +21,17 @@ export function Reveal({
   as?: React.ElementType
   className?: string
 }) {
-  const ref = useRef<HTMLElement | null>(null)
-  const [shown, setShown] = useState(false)
-
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (reduced) {
-      // Reveal must render hidden on the server and first client paint (to match
-      // hydration), then show once we know motion is off — the sync set here is
-      // the intended, one-time correction.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setShown(true)
-      return
-    }
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setShown(true)
-          io.disconnect()
-        }
-      },
-      { rootMargin: '0px 0px -8% 0px', threshold: 0.12 },
-    )
-    io.observe(el)
-    return () => io.disconnect()
-  }, [])
+  const MotionTag = (m[as as keyof typeof m] ?? m.div) as typeof m.div
 
   return (
-    <Tag
-      ref={ref}
+    <MotionTag
       className={className}
-      style={{
-        opacity: shown ? 1 : 0,
-        transform: shown ? 'none' : 'translateY(14px)',
-        transition: `opacity 0.55s cubic-bezier(0.22,1,0.36,1) ${delay}ms, transform 0.55s cubic-bezier(0.22,1,0.36,1) ${delay}ms`,
-      }}
+      initial={{ opacity: 0, y: 14 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '0px 0px -8% 0px', amount: 0.12 }}
+      transition={{ duration: DUR.slow, ease: EASE_OUT, delay: delay / 1000 }}
     >
       {children}
-    </Tag>
+    </MotionTag>
   )
 }

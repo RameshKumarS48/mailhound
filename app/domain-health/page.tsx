@@ -28,7 +28,7 @@ export default function DomainHealthPage() {
     <ToolPage
       current="/domain-health"
       title="Domain health check"
-      intro="One inspection, one grade. The hound sniffs a domain’s SPF, DKIM, DMARC, MX, reverse DNS, encryption, relay posture and blacklist record — then tells you whether your mail is built to reach the inbox."
+      intro="One inspection, one grade. We check a domain’s SPF, DKIM, DMARC, MX, reverse DNS, encryption, relay posture and blacklist record — then tell you whether your mail is built to reach the inbox."
       fieldNote={{
         body: 'SPF, DKIM and DMARC are the three signatures inbox providers check before they trust your mail. Miss one and your messages get filed under spam — or bounced outright. This report grades all eight signals at once, so you know exactly what to fix first.',
         ctaHref: '/signup',

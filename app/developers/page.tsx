@@ -4,6 +4,7 @@ import { BuyPackButton } from '@/components/buy-pack-button'
 import { SiteNav, SiteFooter } from '@/components/site-chrome'
 import { Section, SectionHeading } from '@/components/site/section'
 import { Reveal } from '@/components/site/reveal'
+import { StaggerGroup, StaggerItem } from '@/components/site/motion/stagger'
 import { CodeBlock, type CodeSample } from '@/components/site/code-block'
 import { CtaBand } from '@/components/site/cta-band'
 
@@ -87,7 +88,7 @@ export default function DevelopersPage() {
       {/* Hero */}
       <section className="mx-auto max-w-6xl px-6 pb-10 pt-16 sm:pt-24">
         <div className="grid items-start gap-10 lg:grid-cols-[1fr_1.1fr]">
-          <Reveal>
+          <Reveal className="min-w-0">
             <p className="eyebrow text-hound">For developers</p>
             <h1 className="display mt-4 font-semibold text-ink text-fluid-5xl">
               Email verification, one request away.
@@ -103,7 +104,7 @@ export default function DevelopersPage() {
             </div>
           </Reveal>
 
-          <Reveal delay={120} className="space-y-3">
+          <Reveal delay={120} className="min-w-0 space-y-3">
             <CodeBlock samples={REQUEST_SAMPLES} />
             <CodeBlock samples={RESPONSE_SAMPLE} caption="Response" />
           </Reveal>
@@ -128,14 +129,14 @@ export default function DevelopersPage() {
 
       {/* Features */}
       <Section>
-        <div className="grid gap-8 sm:grid-cols-3">
-          {FEATURES.map((f, i) => (
-            <Reveal key={f.label} delay={i * 70}>
+        <StaggerGroup className="grid gap-8 sm:grid-cols-3">
+          {FEATURES.map((f) => (
+            <StaggerItem key={f.label} className="min-w-0">
               <p className="font-semibold text-ink">{f.label}</p>
               <p className="mt-2 text-sm leading-relaxed text-ink-2">{f.body}</p>
-            </Reveal>
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerGroup>
       </Section>
 
       {/* Pricing */}
@@ -145,9 +146,9 @@ export default function DevelopersPage() {
           title="Buy once, use whenever"
           lede="Credits are shared with your dashboard. No subscriptions, no expiry, no monthly minimum."
         />
-        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {API_PACKS.map((pack, i) => (
-            <Reveal key={pack.id} delay={i * 55}>
+        <StaggerGroup className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {API_PACKS.map((pack) => (
+            <StaggerItem key={pack.id} className="h-full">
               <div className="panel group flex h-full flex-col p-6 transition-all hover:border-hound hover:shadow-[var(--shadow-panel)]">
                 <p className="eyebrow">{pack.credits.toLocaleString()} verifications</p>
                 <p className="display mt-3 text-4xl font-semibold text-ink">
@@ -160,9 +161,9 @@ export default function DevelopersPage() {
                   <BuyPackButton packId={pack.id} />
                 </div>
               </div>
-            </Reveal>
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerGroup>
         <p className="mt-6 font-mono text-xs text-ink-3">
           Every pack — 7-point engine · credits never expire · no monthly minimum · API + dashboard access
         </p>

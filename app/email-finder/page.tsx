@@ -28,7 +28,7 @@ export default function EmailFinderPage() {
     <ToolPage
       current="/email-finder"
       title="Email finder"
-      intro="Give the hound a name and a company. It works through the address patterns real companies use, then knocks on the mail server to see which one is actually home."
+      intro="Give us a name and a company. We work through the address patterns real companies use, then check each candidate against the mail server to see which one is actually live."
       fieldNote={{
         body: (
           <>

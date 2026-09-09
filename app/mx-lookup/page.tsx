@@ -31,7 +31,7 @@ export default function MXLookupPage() {
     <ToolPage
       current="/mx-lookup"
       title="MX record lookup"
-      intro="See which mail servers are configured to receive email for any domain — the first thing the hound checks before it knocks."
+      intro="See which mail servers are configured to receive email for any domain — the first thing every verification checks before it trusts an address."
       fieldNote={{
         body: 'MX (Mail Exchange) records tell the internet which servers handle email for a domain. A domain with no MX records can’t receive email — which means every address on it is dead on arrival.',
         ctaHref: '/signup',

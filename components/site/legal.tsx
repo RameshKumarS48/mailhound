@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { SiteNav, SiteFooter } from '@/components/site-chrome'
+import { Reveal } from '@/components/site/reveal'
 
 /* Shared shell for /privacy and /terms. Deliberately plain: a readable measure,
    a sticky section index, and honest, specific copy about how data and payments
@@ -24,9 +25,11 @@ export function LegalPage({
       <SiteNav />
 
       <section className="mx-auto max-w-6xl px-6 pb-10 pt-16 sm:pt-24">
-        <p className="eyebrow text-hound">Legal</p>
-        <h1 className="display mt-4 font-semibold text-ink text-fluid-4xl">{title}</h1>
-        <p className="mt-3 font-mono text-xs text-ink-3">Last updated {updated}</p>
+        <Reveal>
+          <p className="eyebrow text-hound">Legal</p>
+          <h1 className="display mt-4 font-semibold text-ink text-fluid-4xl">{title}</h1>
+          <p className="mt-3 font-mono text-xs text-ink-3">Last updated {updated}</p>
+        </Reveal>
       </section>
 
       <section className="mx-auto max-w-6xl px-6 pb-24">

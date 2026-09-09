@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { SiteNav, SiteFooter } from '@/components/site-chrome'
 import { CodeBlock as CopyCodeBlock } from '@/components/site/code-block'
 import { DocsToc } from '@/components/site/docs-toc'
+import { Reveal } from '@/components/site/reveal'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -38,15 +39,17 @@ export default function DocsPage() {
       <SiteNav />
 
       <div className="mx-auto max-w-6xl px-6 py-16">
-        <p className="eyebrow text-hound">Reference</p>
-        <h1 className="display mt-4 font-semibold text-ink text-fluid-5xl">API Reference</h1>
-        <p className="mt-4 max-w-xl text-ink-2 text-fluid-lg">
-          Integrate Mailhound&apos;s 7-point email verification engine into any application.
-        </p>
-        <div className="mt-6 flex gap-4 font-mono text-sm">
-          <Link href="/developers" className="text-hound hover:underline">Get API key →</Link>
-          <Link href="/developers/dashboard" className="text-ink-3 hover:text-ink hover:underline">Dashboard →</Link>
-        </div>
+        <Reveal>
+          <p className="eyebrow text-hound">Reference</p>
+          <h1 className="display mt-4 font-semibold text-ink text-fluid-5xl">API Reference</h1>
+          <p className="mt-4 max-w-xl text-ink-2 text-fluid-lg">
+            Integrate Mailhound&apos;s 7-point email verification engine into any application.
+          </p>
+          <div className="mt-6 flex gap-4 font-mono text-sm">
+            <Link href="/developers" className="text-hound hover:underline">Get API key →</Link>
+            <Link href="/developers/dashboard" className="text-ink-3 hover:text-ink hover:underline">Dashboard →</Link>
+          </div>
+        </Reveal>
 
         <div className="mt-14 grid gap-12 lg:grid-cols-[14rem_1fr]">
           <DocsToc items={TOC} />
