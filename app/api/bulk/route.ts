@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { after } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { debitCreditAdmin, getBalance } from '@/lib/credits'
+import { debitCreditAdmin, getBalance, creditUser } from '@/lib/credits'
 import { verifyEmail } from '@/lib/verification'
 import Papa from 'papaparse'
 
@@ -47,6 +47,20 @@ export async function POST(req: NextRequest) {
     }, { status: 402 })
   }
 
+  // Debit atomically BEFORE creating the job and honor the result. The balance
+  // check above is not atomic — two concurrent uploads can both pass it — so the
+  // atomic RPC is the real guard. Ignoring it (the old behavior) let a losing
+  // race run a whole bulk job for free.
+  const debit = await debitCreditAdmin(user.id, emails.length)
+  if (debit === 'insufficient') {
+    return NextResponse.json({
+      error: `Not enough credits for ${emails.length} emails. Top up at /pricing.`,
+    }, { status: 402 })
+  }
+  if (debit === 'error') {
+    return NextResponse.json({ error: 'Could not reserve credits, please try again' }, { status: 500 })
+  }
+
   const { data: job, error: jobError } = await supabase
     .from('verification_jobs')
     .insert({ user_id: user.id, status: 'processing', total: emails.length })
@@ -54,10 +68,14 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (jobError || !job) {
+    // Credits were already taken but no job exists to consume them — refund so
+    // the debit isn't silently lost. Log if the refund itself fails so a lost
+    // balance is at least observable.
+    await creditUser(user.id, emails.length, 'Refund — bulk job failed to start').catch(err =>
+      console.error(`bulk: refund failed for ${user.id} (${emails.length} credits)`, err),
+    )
     return NextResponse.json({ error: 'Failed to create job' }, { status: 500 })
   }
-
-  await debitCreditAdmin(user.id, emails.length)
 
   // after() runs after the response is sent — Vercel Fluid Compute keeps the
   // function alive until this completes, no matter how long the list is.

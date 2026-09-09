@@ -31,10 +31,14 @@ function getHandler() {
       // Subscription payments have no `credits` metadata — skip; the subscription
       // events below grant access instead.
       if (userId && credits) {
+        // Key the grant on the payment id so a redelivered/retried webhook is a
+        // no-op instead of crediting the buyer twice.
+        const paymentId = (payload.data as { payment_id?: string }).payment_id
         await creditUser(
           userId,
           Number(credits),
           `Credit pack — ${Number(credits).toLocaleString()} credits`,
+          paymentId ? `dodo_payment:${paymentId}` : undefined,
         )
       }
     },

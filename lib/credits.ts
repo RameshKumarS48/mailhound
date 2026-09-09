@@ -69,13 +69,37 @@ export async function debitCreditAdmin(
 // Called from the Dodo webhook (server-to-server, no user session), so it must
 // use the service-role client to bypass RLS. Throws on failure so the webhook
 // returns non-2xx and Dodo retries rather than silently dropping the credit.
-export async function creditUser(userId: string, amount: number, description: string) {
+//
+// `reference` is an idempotency key (the originating payment id). When supplied,
+// the row is upserted with ON CONFLICT (reference) DO NOTHING, so a redelivered
+// webhook can't credit the buyer twice (migration 008). Falls back to a plain
+// insert if that column/index isn't deployed yet — credits are never dropped,
+// they just aren't deduped until the migration is applied.
+export async function creditUser(
+  userId: string,
+  amount: number,
+  description: string,
+  reference?: string,
+) {
   const supabase = createAdminClient()
-  const { error } = await supabase.from('credit_ledger').insert({
-    user_id: userId,
-    amount,
-    type: 'credit',
-    description,
-  })
+  const row = { user_id: userId, amount, type: 'credit', description }
+
+  if (reference) {
+    const { error } = await supabase
+      .from('credit_ledger')
+      .upsert({ ...row, reference }, { onConflict: 'reference', ignoreDuplicates: true })
+    if (!error) return
+
+    // Column or unique index not deployed yet — fall through to a plain insert
+    // so the credit is still granted (loses idempotency until migration 008).
+    const notDeployed =
+      error.code === '42703' /* undefined_column */ ||
+      error.code === '42P10' /* no matching conflict target */ ||
+      error.code === 'PGRST204' /* column not in schema cache */ ||
+      /reference/i.test(error.message ?? '')
+    if (!notDeployed) throw new Error(`creditUser failed for ${userId}: ${error.message}`)
+  }
+
+  const { error } = await supabase.from('credit_ledger').insert(row)
   if (error) throw new Error(`creditUser failed for ${userId}: ${error.message}`)
 }
