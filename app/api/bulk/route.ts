@@ -91,40 +91,86 @@ async function processJob(jobId: string, emails: string[], userId: string) {
   const supabase = await createClient()
 
   let valid = 0, risky = 0, invalid = 0
+  // Emails whose results were actually persisted — the basis for the refund
+  // below. Credits were debited for all of `emails` up front; whatever we never
+  // verify gets returned so the user is only charged for work delivered.
+  let processed = 0
+  let failed = false
 
   // Process in chunks of 20 so we don't overwhelm the SMTP worker
   const CHUNK = 20
-  for (let i = 0; i < emails.length; i += CHUNK) {
-    const chunk = emails.slice(i, i + CHUNK)
-    const results = await Promise.all(chunk.map(e => verifyEmail(e)))
+  try {
+    for (let i = 0; i < emails.length; i += CHUNK) {
+      const chunk = emails.slice(i, i + CHUNK)
+      // allSettled so one email that throws (worker hiccup, bad address) can't
+      // reject the whole chunk and abort the job. Rejections are logged and
+      // simply not persisted — they fall into the refund at the end.
+      const settled = await Promise.allSettled(chunk.map(e => verifyEmail(e)))
+      const results = []
+      for (const s of settled) {
+        if (s.status === 'fulfilled') results.push(s.value)
+        else console.error(`bulk: verifyEmail rejected in job ${jobId}`, s.reason)
+      }
 
-    for (const result of results) {
-      if (result.status === 'valid') valid++
-      else if (result.status === 'risky') risky++
-      else invalid++
+      for (const result of results) {
+        if (result.status === 'valid') valid++
+        else if (result.status === 'risky') risky++
+        else invalid++
+      }
+
+      if (results.length > 0) {
+        const { error } = await supabase.from('verification_results').insert(
+          results.map(r => ({
+            job_id:  jobId,
+            user_id: userId,
+            email:   r.email,
+            status:  r.status,
+            reason:  r.reason,
+            score:   r.score,
+            raw_checks: r.checks,
+          }))
+        )
+        if (error) throw new Error(`results insert failed: ${error.message}`)
+        processed += results.length
+      }
+
+      // Update running counts so the dashboard stays live
+      await supabase
+        .from('verification_jobs')
+        .update({ valid, risky, invalid })
+        .eq('id', jobId)
     }
-
-    await supabase.from('verification_results').insert(
-      results.map(r => ({
-        job_id:  jobId,
-        user_id: userId,
-        email:   r.email,
-        status:  r.status,
-        reason:  r.reason,
-        score:   r.score,
-        raw_checks: r.checks,
-      }))
-    )
-
-    // Update running counts so the dashboard stays live
-    await supabase
-      .from('verification_jobs')
-      .update({ valid, risky, invalid })
-      .eq('id', jobId)
+  } catch (err) {
+    // Any unexpected throw used to leave the job stuck in 'processing' forever
+    // with the credits already spent. Fall through to the terminal-status write
+    // and refund instead.
+    failed = true
+    console.error(`bulk: processJob ${jobId} aborted after ${processed}/${emails.length}`, err)
   }
 
-  await supabase
+  // Always leave the job in a terminal state so pollers stop waiting on it.
+  const { error: finalizeError } = await supabase
     .from('verification_jobs')
-    .update({ status: 'completed', valid, risky, invalid, completed_at: new Date().toISOString() })
+    .update({
+      status: failed ? 'failed' : 'completed',
+      valid, risky, invalid,
+      completed_at: new Date().toISOString(),
+    })
     .eq('id', jobId)
+  if (finalizeError) {
+    console.error(`bulk: failed to finalize job ${jobId} status`, finalizeError)
+  }
+
+  // Refund credits for anything we never verified. Keyed on the job id so a
+  // re-invocation of processJob can't refund twice (credit_ledger.reference is
+  // unique in prod — migration 008).
+  const refund = emails.length - processed
+  if (refund > 0) {
+    await creditUser(
+      userId,
+      refund,
+      `Refund — ${refund} of ${emails.length} bulk emails not verified`,
+      `bulk_refund:${jobId}`,
+    ).catch(err => console.error(`bulk: refund failed for ${userId} (${refund} credits)`, err))
+  }
 }
