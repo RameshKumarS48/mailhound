@@ -1,9 +1,19 @@
 import DodoPayments from 'dodopayments'
 
-export const dodo = new DodoPayments({
-  bearerToken: process.env.DODO_PAYMENTS_API_KEY!,
-  environment: process.env.NODE_ENV === 'production' ? 'live_mode' : 'test_mode',
-})
+// Constructed lazily so importing this module (during `next build` page-data
+// collection, or on a preview deploy without the key) never throws — the key is
+// only needed at request time. Mirrors createAdminClient in lib/supabase/admin.
+let _dodo: DodoPayments | null = null
+export function getDodo(): DodoPayments {
+  if (_dodo) return _dodo
+  const bearerToken = process.env.DODO_PAYMENTS_API_KEY
+  if (!bearerToken) throw new Error('DODO_PAYMENTS_API_KEY is not set — checkout unavailable')
+  _dodo = new DodoPayments({
+    bearerToken,
+    environment: process.env.NODE_ENV === 'production' ? 'live_mode' : 'test_mode',
+  })
+  return _dodo
+}
 
 // After creating products in the Dodo dashboard, set each product ID as an env var.
 export const CREDIT_PACKS = [

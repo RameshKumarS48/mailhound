@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { dodo, CREDIT_PACKS, API_PACKS, WATCH_PLANS } from '@/lib/dodo'
+import { getDodo, CREDIT_PACKS, API_PACKS, WATCH_PLANS } from '@/lib/dodo'
 import { createClient } from '@/lib/supabase/server'
 
 export async function POST(req: NextRequest) {
@@ -8,6 +8,7 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { packId } = await req.json()
+  const dodo = getDodo()
 
   // Recurring Watch subscription — checkout in subscription mode, tag metadata
   // with the plan so the webhook can upsert the subscriptions table.
